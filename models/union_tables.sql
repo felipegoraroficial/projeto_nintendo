@@ -1,4 +1,4 @@
-%s ql
+
 select *
 from
     (
