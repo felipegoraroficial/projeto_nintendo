@@ -5,5 +5,4 @@ sources:
     database: nintendo_databricks
     schema: prd
     tables:
-      - name: mkt-magalu
-      - name: mkt-mercadolivre
+      - name: nintendo-bigtable
