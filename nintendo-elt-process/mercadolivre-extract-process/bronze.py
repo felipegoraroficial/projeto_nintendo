@@ -40,7 +40,7 @@ for file_path in file_paths:  # Itera sobre cada arquivo na lista de arquivos
             preco_promo = preco_promo.find('span', class_='andes-money-amount__fraction')
             preco_promo = preco_promo.text.replace(" ", "").replace("\n", "")
             parcelado = parcelado.text.strip()
-            parcelado = parcelado.replace("\n", "").replace(" ", "")
+            parcelado = parcelado.replace("\n", "")
             if not img.startswith('https://'):
                 img = '-'
             else:
