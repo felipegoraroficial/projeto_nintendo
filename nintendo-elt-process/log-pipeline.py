@@ -24,7 +24,7 @@ def get_job_runs(databricks_instance, token, job_id):
 
 # COMMAND ----------
 
-config_path = "/Workspace/Users/felipegoraro@outlook.com.br/projeto_nintendo/config.json"
+config_path = "/Workspace/nintendo/dev/projeto_nintendo/config.json"
 
 with open(config_path, "r") as f:
     config = json.load(f)
