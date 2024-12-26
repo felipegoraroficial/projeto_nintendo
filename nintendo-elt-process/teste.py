@@ -23,17 +23,4 @@ config_path = f"{current_dir}/projeto_nintendo/config.json"
 
 # COMMAND ----------
 
-config_path
-
-# COMMAND ----------
-
-# Abre o arquivo de configuração e carrega seu conteúdo em um dicionário
-with open(config_path, "r") as f:
-    config = json.load(f)
-
-# Obtém o valor da chave "env" do dicionário de configuração
-env = config["env"]
-
-# COMMAND ----------
-
-env
+print(config_path)
