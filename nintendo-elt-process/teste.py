@@ -1,3 +1,3 @@
 # Databricks notebook source
-env = dbutils.widgets.get("env")
+env = dbutils.widgets.getArgument("env")
 print(env)
