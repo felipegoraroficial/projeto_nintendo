@@ -1,19 +1,32 @@
 # Databricks notebook source
-# MAGIC %load_ext autoreload
-# MAGIC %autoreload 2
-# MAGIC # Enables autoreload; learn more at https://docs.databricks.com/en/files/workspace-modules.html#autoreload-for-python-modules
-# MAGIC # To disable autoreload; run %autoreload 0
-
-# COMMAND ----------
-
 from pyspark.sql.functions import input_file_name, when, col, regexp_extract, to_date, row_number,udf, lit,regexp_replace,trim
 from pyspark.sql.window import Window
 from pyspark.sql.types import StructType, StructField, StringType, FloatType, DateType
+import os
+import json
+import sys
 
 # COMMAND ----------
 
-import sys
-sys.path.append('/Workspace/Users/felipegoraro@outlook.com.br/meus_scripts_pyspark')
+# Obtém o caminho do diretório atual
+current_dir = os.getcwd()
+
+# Ajusta o caminho do diretório para os primeiros 4 níveis
+current_dir = '/'.join(current_dir.split('/')[:4])
+
+# Define o caminho do arquivo de configuração
+config_path = f"{current_dir}/projeto_nintendo/config.json"
+
+# Abre o arquivo de configuração e carrega seu conteúdo em um dicionário
+with open(config_path, "r") as f:
+    config = json.load(f)
+
+# Obtém o valor da chave "env" do dicionário de configuração
+env = config["env"]
+
+# COMMAND ----------
+
+sys.path.append(f'{current_dir}/meus_scripts_pyspark')
 
 # COMMAND ----------
 
@@ -38,7 +51,7 @@ schema = StructType([
 # COMMAND ----------
 
 # Caminho para o diretório bronze
-bronze_path = "/mnt/dev/magalu/bronze/"
+bronze_path = f"/mnt/{env}/magalu/bronze/"
 
 # Lendo arquivos JSON do diretório bronze com a opção de multiline ativada
 mg = spark.read.option("multiline", "true").json(bronze_path)
@@ -48,7 +61,7 @@ mg = process_data_to_bronze(mg,'imagem')
 # COMMAND ----------
 
 # Caminho para o diretório bronze
-bronze_path = "/mnt/dev/mercadolivre/bronze/"
+bronze_path = f"/mnt/{env}/mercadolivre/bronze/"
 
 # Lendo arquivos JSON do diretório bronze com a opção de multiline ativada
 ml = spark.read.option("multiline", "true").json(bronze_path)
@@ -89,7 +102,7 @@ df = df.withColumn('memoria', extrair_memoria_udf(col('titulo'))) \
 
 # COMMAND ----------
 
-df = df.withColumn('preco_promo', col('preco_promo').cast('double'))
+df = df.withColumn('preco_promo', regexp_replace(trim(col('preco_promo')), r'[^\d,]', '').cast('double'))
 
 # COMMAND ----------
 
@@ -110,7 +123,7 @@ df = df.filter(col("titulo").rlike("(?i)^console"))
 # COMMAND ----------
 
 # Caminho para o diretório silver
-silver_path = "/mnt/dev/silver/"
+silver_path = f"/mnt/{env}/silver/"
 
 # Salva o DataFrame em formato parquet no DBFS em silver_path
 df.write.mode("overwrite").parquet(silver_path)
