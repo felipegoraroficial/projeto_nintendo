@@ -14,7 +14,7 @@ current_dir = '/'.join(current_dir.split('/')[:4])
 
 # COMMAND ----------
 
-current_dir
+print(current_dir)
 
 # COMMAND ----------
 
