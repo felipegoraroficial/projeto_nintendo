@@ -1,7 +1,7 @@
 # Databricks notebook source
 from pyspark.sql.functions import input_file_name, when, col, regexp_extract, to_date, row_number,udf, lit,regexp_replace,trim
 from pyspark.sql.window import Window
-from pyspark.sql.types import StructType, StructField, StringType, FloatType, DateType
+from pyspark.sql.types import StructType, StructField, StringType, DoubleType, DateType
 import os
 import json
 import sys
@@ -41,10 +41,10 @@ schema = StructType([
     StructField("titulo", StringType(), True),          # Título do produto
     StructField("moeda", StringType(), True),           # Moeda utilizada na transação
     StructField("condition_promo", StringType(), True), # Condição promocional do produto
-    StructField("preco_promo", FloatType(), True),      # Preço promocional do produto
-    StructField("parcelado", FloatType(), True),        # Valor parcelado do produto
+    StructField("preco_promo", DoubleType(), True),      # Preço promocional do produto
+    StructField("parcelado", StringType(), True),        # Valor parcelado do produto
     StructField("imagem", StringType(), True),          # URL da imagem do produto
-    StructField("origem", StringType(), True),          # Origem da extração do produto
+    StructField("file_name", StringType(), True),          # Origem da extração do produto
     StructField("file_date", DateType(), True)          # Data do arquivo
 ])
 
@@ -78,7 +78,27 @@ df = unir_dataframes(ml, mg)
 
 # COMMAND ----------
 
+df = df.select('titulo', 'moeda', 'condition_promo','preco_promo', 'parcelado', 'imagem', 'file_name', 'file_date')
+
+# COMMAND ----------
+
+df = df.withColumn('preco_promo', regexp_replace(trim(col('preco_promo')), r'[^\d,]', '').cast('double'))
+
+# COMMAND ----------
+
+df = spark.createDataFrame(df.rdd, schema)
+
+# COMMAND ----------
+
 df = df.withColumn('parcelado', regexp_replace(trim(col('parcelado')), r'\s+', ' '))
+
+# COMMAND ----------
+
+df = change_null_numeric(df, 'double')
+
+# COMMAND ----------
+
+df = change_null_string(df)
 
 # COMMAND ----------
 
@@ -99,22 +119,6 @@ df = df.withColumn('memoria', extrair_memoria_udf(col('titulo'))) \
        .withColumn('oled', when(col('titulo').rlike('(?i)Oled'), 'Sim').otherwise('Nao')) \
        .withColumn('lite', when(col('titulo').rlike('(?i)Lite'), 'Sim').otherwise('Nao')) \
        .withColumn('joy_con', when(col('titulo').rlike('(?i)Joy-con'), 'Sim').otherwise('Nao'))
-
-# COMMAND ----------
-
-df = df.withColumn('preco_promo', regexp_replace(trim(col('preco_promo')), r'[^\d,]', '').cast('double'))
-
-# COMMAND ----------
-
-df = change_null_numeric(df, 'double')
-
-# COMMAND ----------
-
-df = change_null_string(df)
-
-# COMMAND ----------
-
-df = df.select('titulo', 'moeda', 'condition_promo','preco_promo', 'parcelado', 'imagem', 'file_name', 'file_date','memoria', 'oled', 'lite', 'joy_con')
 
 # COMMAND ----------
 
