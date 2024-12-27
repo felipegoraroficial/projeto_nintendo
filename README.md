@@ -4,6 +4,20 @@
 
 O projeto foi desenvolvido utilizando as linguagens de programação Python e PySpark no ambiente em nuvem do Azure Databricks. Para a normalização e modelagem de dados, foi utilizado SQL na plataforma dbt Cloud.
 
+A arquitetura do projeto envolve recursos da Azure integrados ao dbt cloud,
+Usando datatabricks como plataforma do processo de ELT, os dados extraidos da web são armazenados em um diretorio inbound dentro de um container da conta de armazenamento da Azure com sua data de extração
+Utilizamos o beautgullsoup para identificar elementos e carregar inforações na stage bronze
+Com pyspark, carregamos todos os dados da stage bronze e passamos por uma limpeza e transformação de dados até o carregamento dos dados tratados em uma stage silver
+Por fim, os dados são processados e carregados em uma external table que está particionada pela data de extração.
+
+No dbt, é feita a conexão do catalog do Databricks e criado views de normalização de dados e metricas para analise de dados.
+
+Todo processo ocorre no workflow do databricks de forma schedulada e com alertas enviados por e-mail com tempo de processo ou falha no mesmo.
+
+Os scripts são versionados e sepados por ambientes de dev e prd.
+
+![arquitetura-projeto-nintendo](https://github.com/user-attachments/assets/7e06bcbe-da5e-42a4-a9d2-bf7abaf7a238)
+
 ## Objetivo:
 
 O projeto visa obter dados referentes aos anúncios de consoles do Nintendo Switch em sites de e-commerce e marketplaces, utilizando BeautifulSoup para coletar informações relevantes dos anúncios e armazenar os dados em um data warehouse.
