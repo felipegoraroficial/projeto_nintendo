@@ -1,4 +1,18 @@
 # Databricks notebook source
+# MAGIC %md
+# MAGIC # Objetivo do Notebook
+# MAGIC  Este notebook tem como objetivo processar e analisar dados relacionados ao projeto Nintendo.
+# MAGIC  Ele carrega um arquivo de configuração para definir o ambiente de execução e utiliza bibliotecas do PySpark para manipulação e transformação dos dados.
+# MAGIC
+# MAGIC  O notebook está dividido em várias células, cada uma com uma função específica:
+# MAGIC  1. Importação das bibliotecas necessárias.
+# MAGIC  2. Carregamento do arquivo de configuração e definição do ambiente de execução.
+# MAGIC  3. Leitura e processamento dos dados.
+# MAGIC  4. Transformações e limpeza dos dados.
+# MAGIC  5. Carregamento dos dados em outra camada da external lcoation no storageaccount da azure.
+
+# COMMAND ----------
+
 from pyspark.sql.functions import input_file_name, when, col, regexp_extract, to_date, row_number,udf, lit,regexp_replace,trim
 from pyspark.sql.window import Window
 from pyspark.sql.types import StructType, StructField, StringType, DoubleType, DateType
@@ -26,6 +40,8 @@ env = config["env"]
 
 # COMMAND ----------
 
+# Adiciona o caminho do diretório 'meus_scripts_pyspark' ao sys.path
+# Isso permite que módulos Python localizados nesse diretório sejam importados
 sys.path.append(f'{current_dir}/meus_scripts_pyspark')
 
 # COMMAND ----------
@@ -71,33 +87,49 @@ ml = process_data_to_bronze(ml,'imagem')
 # COMMAND ----------
 
 def unir_dataframes(df1, df2):
+    """
+    Une dois DataFrames pelo nome das colunas, permitindo colunas ausentes.
 
+    Parâmetros:
+    df1 (DataFrame): O primeiro DataFrame.
+    df2 (DataFrame): O segundo DataFrame.
+
+    Retorna:
+    DataFrame: Um novo DataFrame resultante da união dos dois DataFrames de entrada.
+    """
     return df1.unionByName(df2, allowMissingColumns=True)
 
 df = unir_dataframes(ml, mg)
 
 # COMMAND ----------
 
-df = df.select('titulo', 'moeda', 'condition_promo','preco_promo', 'parcelado', 'imagem', 'file_name', 'file_date')
+# Seleciona as colunas específicas do DataFrame para manter no resultado final
+df = df.select('titulo', 'moeda', 'condition_promo', 'preco_promo', 'parcelado', 'imagem', 'file_name', 'file_date')
 
 # COMMAND ----------
 
+# Remove caracteres não numéricos e vírgulas da coluna 'preco_promo', 
+# em seguida, converte o valor para o tipo double
 df = df.withColumn('preco_promo', regexp_replace(trim(col('preco_promo')), r'[^\d,]', '').cast('double'))
 
 # COMMAND ----------
 
+# Cria um novo DataFrame com base no RDD do DataFrame existente e aplica o esquema especificado
 df = spark.createDataFrame(df.rdd, schema)
 
 # COMMAND ----------
 
+# Remove espaços em branco extras da coluna 'parcelado'
 df = df.withColumn('parcelado', regexp_replace(trim(col('parcelado')), r'\s+', ' '))
 
 # COMMAND ----------
 
+# Converter valores nulos de colunas que são do tipo double para 0
 df = change_null_numeric(df, 'double')
 
 # COMMAND ----------
 
+# Converte valores nulos de colunas que são do tipo string para -
 df = change_null_string(df)
 
 # COMMAND ----------
@@ -122,6 +154,7 @@ df = df.withColumn('memoria', extrair_memoria_udf(col('titulo'))) \
 
 # COMMAND ----------
 
+# Filtra o DataFrame para manter apenas as linhas onde a coluna 'titulo' começa com a palavra 'console' (case insensitive)
 df = df.filter(col("titulo").rlike("(?i)^console"))
 
 # COMMAND ----------
