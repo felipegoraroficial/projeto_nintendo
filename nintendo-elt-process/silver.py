@@ -50,8 +50,8 @@ schema = StructType([
 
 # COMMAND ----------
 
-# Caminho para o diretório bronze
-bronze_path = f"/mnt/{env}/magalu/bronze/"
+# Caminho para a external location do diretório bronze em magalu
+bronze_path = f'abfss://{env}@nintendostorageaccount.dfs.core.windows.net/magalu/bronze/'
 
 # Lendo arquivos JSON do diretório bronze com a opção de multiline ativada
 mg = spark.read.option("multiline", "true").json(bronze_path)
@@ -60,8 +60,8 @@ mg = process_data_to_bronze(mg,'imagem')
 
 # COMMAND ----------
 
-# Caminho para o diretório bronze
-bronze_path = f"/mnt/{env}/mercadolivre/bronze/"
+# Caminho para a external location do diretório bronze em mercadolivre
+bronze_path = f'abfss://{env}@nintendostorageaccount.dfs.core.windows.net/mercadolivre/bronze/'
 
 # Lendo arquivos JSON do diretório bronze com a opção de multiline ativada
 ml = spark.read.option("multiline", "true").json(bronze_path)
@@ -126,8 +126,8 @@ df = df.filter(col("titulo").rlike("(?i)^console"))
 
 # COMMAND ----------
 
-# Caminho para o diretório silver
-silver_path = f"/mnt/{env}/silver/"
+# Caminho para a external location do diretório silver
+silver_path = f'abfss://{env}@nintendostorageaccount.dfs.core.windows.net/silver/'
 
-# Salva o DataFrame em formato parquet no DBFS em silver_path
+# Salva o DataFrame em formato parquet na external location
 df.write.mode("overwrite").parquet(silver_path)

@@ -22,12 +22,14 @@ env = config["env"]
 
 # COMMAND ----------
 
-df = spark.read.parquet(f"/mnt/{env}/silver")
+silver_path = f'abfss://{env}@nintendostorageaccount.dfs.core.windows.net/silver/'
+
+df = spark.read.parquet(silver_path)
 
 # COMMAND ----------
 
 query = f"""
-CREATE TABLE IF NOT EXISTS {env}.`nintendo-bigtable` (
+CREATE EXTERNAL TABLE IF NOT EXISTS {env}.`nintendo-bigtable` (
     titulo STRING, 
     moeda STRING, 
     condition_promo STRING, 
@@ -41,9 +43,16 @@ CREATE TABLE IF NOT EXISTS {env}.`nintendo-bigtable` (
     lite STRING, 
     joy_con STRING 
 )
+USING DELTA
+LOCATION 'abfss://{env}@nintendostorageaccount.dfs.core.windows.net/gold/'
 """
 spark.sql(query)
 
 # COMMAND ----------
 
-df.write.mode("overwrite").saveAsTable(f"{env}.`nintendo-bigtable`")
+df.write \
+  .format("delta") \
+  .mode("overwrite") \
+  .option("overwriteSchema", "true") \
+  .partitionBy("file_date") \
+  .save(f"abfss://{env}@nintendostorageaccount.dfs.core.windows.net/gold")
