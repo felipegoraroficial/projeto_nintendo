@@ -1,4 +1,11 @@
 # Databricks notebook source
+# MAGIC %md
+# MAGIC # Objetivo do Notebook
+# MAGIC
+# MAGIC Este notebook tem como objetivo realizar a extração de dados relacionados ao projeto Nintendo. Utilizando bibliotecas como `requests` e `BeautifulSoup`, o notebook faz a coleta de dados da web, processa e transforma esses dados conforme necessário, e finalmente carrega os dados processados em um formato adequado para análise posterior. Além disso, o notebook utiliza um arquivo de configuração (`config.json`) para definir parâmetros importantes, como o ambiente de execução.
+
+# COMMAND ----------
+
 import requests
 from bs4 import BeautifulSoup
 import datetime

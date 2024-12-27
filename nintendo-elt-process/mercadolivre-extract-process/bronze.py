@@ -1,4 +1,11 @@
 # Databricks notebook source
+# MAGIC %md
+# MAGIC # Objetivo deste notebook
+# MAGIC
+# MAGIC  Este notebook tem como objetivo carregar e processar dados que estão em uma external location do storageaccount do azure em formato txt e com a utilização da biblioteca BeautifulSoup, que identifica os elementos dos dados extraídos em html que serão necesários para a realização do projeto, armazena-os em uma variavel para carregar os dados posteriormente em outra camada da external location em um formato json.
+
+# COMMAND ----------
+
 from bs4 import BeautifulSoup
 import re
 import json
