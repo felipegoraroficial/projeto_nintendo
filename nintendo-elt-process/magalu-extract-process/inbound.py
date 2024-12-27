@@ -44,7 +44,8 @@ for page_number in range(1, 17):
     # Formata o conteúdo da página HTML de forma legível
     page_content = sopa.prettify()
 
-    # Abre um arquivo para escrita no diretório especificado no DBFS, com nome baseado no número da página e data atual
-    with open(f"/dbfs/mnt/{env}/magalu/inbound/page{page_number}_{current_date}.txt", "w") as file:
-        # Escreve o conteúdo da página no arquivo
-        file.write(page_content)
+    # define o caminho inbound da external location da storage account
+    file_path = f"abfss://{env}@nintendostorageaccount.dfs.core.windows.net/magalu/inbound/page{page_number}_{current_date}.txt"
+
+    # Escreve o conteúdo da página no arquivo usando dbutils.fs.put
+    dbutils.fs.put(file_path, page_content, overwrite=True)
