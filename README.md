@@ -16,7 +16,32 @@ Os scripts são versionados e separados por ambientes de desenvolvimento (dev) e
 
 ## Objetivo:
 
-O projeto visa obter dados referentes aos anúncios de consoles do Nintendo Switch em sites de e-commerce e marketplaces, utilizando BeautifulSoup para coletar informações relevantes dos anúncios e armazenar os dados em um data warehouse.
+1. **Captação e Armazenamento de Dados Brutos**:
+    - **Objetivo**: Capturar dados brutos diários de sites de e-commerce e marketplaces para análise posterior.
+    - **Benefício**: Permite a reprocessamento dos dados caso os sites mudem, preservando a integridade dos dados históricos.
+
+2. **Processamento de Dados com BeautifulSoup**:
+    - **Objetivo**: Extrair informações essenciais dos arquivos HTML, como links, títulos, preços, promoções, parcelamentos e imagens dos produtos.
+    - **Benefício**: Flexibilidade para ajustar o processamento conforme necessário, sem a perda de dados brutos.
+
+3. **Integração e Limpeza de Dados com PySpark**:
+    - **Objetivo**: Unificar os dados extraídos em um único dataframe e realizar a limpeza e tratamento dos mesmos.
+    - **Benefício**: Melhoria da qualidade dos dados, com correção de valores nulos e extração de informações adicionais dos títulos dos anúncios.
+
+4. **Armazenamento Seguro dos Dados**:
+    - **Objetivo**: Armazenar dados tratados em uma external table no Databricks, garantindo a segurança e integridade dos dados.
+    - **Benefício**: Proteção dos dados em armazenamento externo, prevenindo perdas devido à exclusão de tabelas no Databricks.
+
+5. **Normalização e Análise de Dados com DBT**:
+    - **Objetivo**: Normalizar os dados em views e métricas para facilitar análises de dados.
+    - **Benefício**: Separação de funções entre engenheiros de dados e analistas, aumentando a segurança e eficiência do processo.
+
+6. **Automatização e Notificação**:
+    - **Objetivo**: Automatizar todo o processo via workflows e notificações de falhas ou tempo limite.
+    - **Benefício**: Aumenta a eficiência operacional e permite resposta rápida a problemas.
+
+### Impacto Geral:
+Com esses objetivos bem definidos, seu projeto não só captura e processa dados de forma eficaz, mas também garante a segurança e qualidade dos dados para análises futuras. A separação de funções entre as plataformas melhora a segurança do processo e a colaboração entre as equipes.
 
 ## Etapas do projeto:
 
