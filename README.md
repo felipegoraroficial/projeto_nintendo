@@ -4,17 +4,13 @@
 
 O projeto foi desenvolvido utilizando as linguagens de programação Python e PySpark no ambiente em nuvem do Azure Databricks. Para a normalização e modelagem de dados, foi utilizado SQL na plataforma dbt Cloud.
 
-A arquitetura do projeto envolve recursos da Azure integrados ao dbt cloud,
-Usando datatabricks como plataforma do processo de ELT, os dados extraidos da web são armazenados em um diretorio inbound dentro de um container da conta de armazenamento da Azure com sua data de extração
-Utilizamos o beautgullsoup para identificar elementos e carregar inforações na stage bronze
-Com pyspark, carregamos todos os dados da stage bronze e passamos por uma limpeza e transformação de dados até o carregamento dos dados tratados em uma stage silver
-Por fim, os dados são processados e carregados em uma external table que está particionada pela data de extração.
+A arquitetura do projeto envolve recursos da Azure integrados ao dbt Cloud. Usando o Databricks como plataforma do processo de ELT, os dados extraídos da web são armazenados em um diretório inbound dentro de um contêiner da conta de armazenamento da Azure com a data de extração. Utilizamos o BeautifulSoup para identificar elementos e carregar informações na stage bronze. Com PySpark, carregamos todos os dados da stage bronze e passamos por uma limpeza e transformação de dados até o carregamento dos dados tratados em uma stage silver. Por fim, os dados são processados e carregados em uma tabela externa que está particionada pela data de extração.
 
-No dbt, é feita a conexão do catalog do Databricks e criado views de normalização de dados e metricas para analise de dados.
+No dbt, é feita a conexão do catálogo do Databricks e são criadas views de normalização de dados e métricas para análise de dados.
 
-Todo processo ocorre no workflow do databricks de forma schedulada e com alertas enviados por e-mail com tempo de processo ou falha no mesmo.
+Todo o processo ocorre no workflow do Databricks de forma agendada, com alertas enviados por e-mail em caso de tempo de processo ou falha.
 
-Os scripts são versionados e sepados por ambientes de dev e prd.
+Os scripts são versionados e separados por ambientes de desenvolvimento (dev) e produção (prd).
 
 ![arquitetura-projeto-nintendo](https://github.com/user-attachments/assets/7e06bcbe-da5e-42a4-a9d2-bf7abaf7a238)
 
