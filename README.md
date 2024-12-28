@@ -40,9 +40,6 @@ Os scripts são versionados e separados por ambientes de desenvolvimento (dev) e
     - **Objetivo**: Automatizar todo o processo via workflows e notificações de falhas ou tempo limite.
     - **Benefício**: Aumenta a eficiência operacional e permite resposta rápida a problemas.
 
-### Impacto Geral:
-Com esses objetivos bem definidos, seu projeto não só captura e processa dados de forma eficaz, mas também garante a segurança e qualidade dos dados para análises futuras. A separação de funções entre as plataformas melhora a segurança do processo e a colaboração entre as equipes.
-
 ## Etapas do projeto:
 
 ### 1.Criação do storageaccount
