@@ -12,6 +12,7 @@
 
 import os
 import json
+from pyspark.sql.functions import col
 
 # COMMAND ----------
 
@@ -49,13 +50,13 @@ CREATE EXTERNAL TABLE IF NOT EXISTS {env}.`nintendo-bigtable` (
     condition_promo STRING, 
     preco_promo DOUBLE, 
     parcelado STRING, 
-    imagem STRING,
-    file_name STRING,  
-    file_date DATE, 
+    link STRING,  
+    file_date DATE,
+    status STRING,
+    origem STRING, 
     memoria STRING, 
     oled STRING, 
-    lite STRING, 
-    joy_con STRING 
+    lite STRING
 )
 USING DELTA
 LOCATION 'abfss://{env}@nintendostorageaccount.dfs.core.windows.net/gold/'
@@ -66,12 +67,32 @@ spark.sql(query)
 
 # COMMAND ----------
 
+# Carregando tabela gold antiga
+try:
+    tabela = spark.read.table("nintendo_databricks.dev.`nintendo-bigtable`")
+except:
+    pass
+
+# Verifica se a tabela está vazia
+if tabela.rdd.isEmpty():
+    
+    novos_registros = df
+
+else:
+    # Realize uma junção à esquerda (left anti join) para encontrar os novos registros
+    condicao_join = (df["link"] == tabela["link"]) & (df["status"] == tabela["status"]) & (df["file_date"] == tabela["file_date"])
+    novos_registros = df.join(tabela, condicao_join, how="left_anti")
+
+    display(novos_registros)
+
+# COMMAND ----------
+
 # Escreve o DataFrame no formato Delta no diretório Gold no Azure Data Lake Storage
 # Sobrescreve os dados existentes e o esquema, se necessário
 # Particiona os dados pela coluna "file_date"
-df.write \
+novos_registros.write \
   .format("delta") \
-  .mode("overwrite") \
+  .mode("append") \
   .option("overwriteSchema", "true") \
   .partitionBy("file_date") \
   .save(f"abfss://{env}@nintendostorageaccount.dfs.core.windows.net/gold")

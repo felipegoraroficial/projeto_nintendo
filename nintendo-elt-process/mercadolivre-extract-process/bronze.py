@@ -7,9 +7,12 @@
 # COMMAND ----------
 
 from bs4 import BeautifulSoup
+import requests
 import re
 import json
 import os
+from datetime import datetime
+import sys
 
 # COMMAND ----------
 
@@ -31,6 +34,16 @@ env = config["env"]
 
 # COMMAND ----------
 
+# Adiciona o caminho do diretório 'meus_scripts_pyspark' ao sys.path
+# Isso permite que módulos Python localizados nesse diretório sejam importados
+sys.path.append(f'{current_dir}/meus_scripts_pyspark')
+
+# COMMAND ----------
+
+from deleting_files_range_30_days import deleting_files_range_30
+
+# COMMAND ----------
+
 # Caminho para o diretório de entrada
 inbound_path = f"abfss://{env}@nintendostorageaccount.dfs.core.windows.net/mercadolivre/inbound"
 
@@ -41,46 +54,82 @@ file_paths = [
 
 # COMMAND ----------
 
-for file_path in file_paths:  # Itera sobre cada arquivo na lista de arquivos
+# Obtém a data atual no formato YYYY-MM-DD
+data_atual = datetime.now().strftime("%Y-%m-%d")
 
-    list_todos = []  # Inicializa uma lista vazia para armazenar os dados extraídos
+# COMMAND ----------
 
-    df = spark.read.text(file_path)
-    html_content = "\n".join(row.value for row in df.collect())
+# Filtrando a lista com a data_atual 
+currrent_files_path = [arquivo for arquivo in file_paths if data_atual in arquivo] 
 
-    sopa_bonita = BeautifulSoup(html_content, 'html.parser')  # Analisa o conteúdo HTML usando BeautifulSoup
+# COMMAND ----------
 
-    list_titulo = sopa_bonita.find_all('h2', {'class': 'poly-box poly-component__title'})
-    list_preco_promo = sopa_bonita.find_all('div', {'class': 'poly-price__current'})  # Encontra todos os preços promocionais e condições promocionais
-    list_parcelamento = sopa_bonita.find_all('span', {'class': 'poly-price__installments poly-text-positive'})  # Encontra todas as informações de parcelamento
-    img_tags = sopa_bonita.find_all('img')
-    img_srcs = [img['src'] for img in img_tags]  # Extrai os URLs das imagens
+if currrent_files_path:
 
-    for titulo, preco_promo, parcelado, img in zip(list_titulo, list_preco_promo, list_parcelamento, img_srcs):
-        # Itera sobre os dados extraídos, combinando títulos, preços, condições, parcelamentos e URLs de imagens
+    for file_path in file_paths:  # Itera sobre cada arquivo na lista de arquivos
 
-        titulo = titulo.text.strip()  # Remove espaços em branco do título
-        moeda = preco_promo.find('span', class_='andes-money-amount__currency-symbol').text.strip()
-        condition_promo = preco_promo.find('span', class_='andes-money-amount__discount poly-price__disc_label')
-        condition_promo = condition_promo.text.strip() if condition_promo else "Sem Desconto"
-        preco_promo = preco_promo.find('span', class_='andes-money-amount__fraction')
-        preco_promo = preco_promo.text.replace(" ", "").replace("\n", "")
-        parcelado = parcelado.text.strip()
-        parcelado = parcelado.replace("\n", "")
-        if not img.startswith('https://'):
-            img = '-'
-        else:
-            img = img
+        list_todos = []  # Inicializa uma lista vazia para armazenar os dados extraídos
 
-        list_todos.append({
-            'titulo': titulo,
-            'moeda': moeda,
-            'preco_promo': preco_promo,
-            'condition_promo': condition_promo,
-            'parcelado': parcelado,
-            'imagem': img
-        })  # Adiciona os dados extraídos à lista
+        df = spark.read.text(file_path)
+        html_content = "\n".join(row.value for row in df.collect())
 
-    json_file_path = file_path.replace('inbound', 'bronze').replace('.txt', '.json')  # Define o caminho do arquivo JSON de saída
-    dbutils.fs.put(json_file_path, json.dumps(list_todos, ensure_ascii=False, indent=4), overwrite=True)  # Salva os dados extraídos no arquivo JSON
+        sopa_bonita = BeautifulSoup(html_content, 'html.parser')  # Analisa o conteúdo HTML usando BeautifulSoup
 
+        list_titulo = sopa_bonita.find_all('h2', {'class': 'poly-box poly-component__title'})
+
+        for i in list_titulo:
+
+            link = i.find('a')['href']
+
+            # Define o cabeçalho do agente de usuário para a requisição HTTP
+            headers = {'user-agent': 'Mozilla/5.0'}
+
+            # Faz uma requisição GET para a URL especificada com o número da página e cabeçalho
+            resposta = requests.get(link, headers=headers)
+
+            # Analisa o conteúdo HTML da resposta usando BeautifulSoup
+            sopa_bonita = BeautifulSoup(resposta.text, 'html.parser')
+
+            titulo = sopa_bonita.find('h1', class_='ui-pdp-title').text
+
+            preco = sopa_bonita.find('div', class_='ui-pdp-price__second-line')
+
+            preco_valor = preco.find('span', {'data-testid': 'price-part'}).text
+
+            desconto = preco.find('span', class_='andes-money-amount__discount')
+            desconto = desconto.text if desconto else "sem desconto"
+
+            moeda = preco.find('span', class_='andes-money-amount__currency-symbol').text
+            
+            parcelamento = "sem parcelamento"
+
+            if sopa_bonita.find('p', class_='ui-pdp-color--GREEN ui-pdp-size--MEDIUM ui-pdp-family--REGULAR'):
+                parcelamento = sopa_bonita.find('p', class_='ui-pdp-color--GREEN ui-pdp-size--MEDIUM ui-pdp-family--REGULAR').text
+            elif sopa_bonita.find('p', class_='ui-pdp-color--BLACK ui-pdp-size--MEDIUM ui-pdp-family--REGULAR'):
+                parcelamento = sopa_bonita.find('p', class_='ui-pdp-color--BLACK ui-pdp-size--MEDIUM ui-pdp-family--REGULAR').text
+
+            titulo, preco_valor, desconto, moeda, parcelamento
+
+            list_todos.append({
+                'titulo': titulo,
+                'moeda': moeda,
+                'preco_promo': preco_valor,
+                'condition_promo': desconto,
+                'parcelado': parcelamento,
+                'link': link
+            })  # Adiciona os dados extraídos à lista
+
+        json_file_path = file_path.replace('inbound', 'bronze').replace('.txt', '.json')  # Define o caminho do arquivo JSON de saída
+        dbutils.fs.put(json_file_path, json.dumps(list_todos, ensure_ascii=False, indent=4), overwrite=True)  # Salva os dados extraídos no arquivo JSON
+
+else:
+    print(f"Não existe arquivo extraído na data de {data_atual}")
+
+
+# COMMAND ----------
+
+#deletando arquivos que já possuem um tempo de armazenamento maior que 30 dias
+
+path = f"abfss://{env}@nintendostorageaccount.dfs.core.windows.net/mercadolivre/bronze"
+
+deleting_files_range_30(path)
