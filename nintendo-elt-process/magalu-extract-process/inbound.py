@@ -12,6 +12,7 @@ import datetime
 import re
 import json
 import os
+import sys
 
 # COMMAND ----------
 
@@ -33,26 +34,41 @@ env = config["env"]
 
 # COMMAND ----------
 
+# Adiciona o caminho do diretório 'meus_scripts_pyspark' ao sys.path
+# Isso permite que módulos Python localizados nesse diretório sejam importados
+sys.path.append(f'{current_dir}/meus_scripts_pyspark')
+
+# COMMAND ----------
+
+from deleting_files_range_30_days import deleting_files_range_30
+
+# COMMAND ----------
+
 # Obtém a data atual no formato "YYYY-MM-DD"
 current_date = datetime.datetime.now().strftime("%Y-%m-%d")
 
 # Define o cabeçalho do agente de usuário para a requisição HTTP
 headers = {'user-agent': 'Mozilla/5.0'}
 
-# Loop para iterar sobre os números de página de 1 a 16
-for page_number in range(1, 17):
+# Faz uma requisição GET para a URL especificada com o número da página e cabeçalho
+resposta = requests.get(f"https://www.magazineluiza.com.br/busca/nintendo+switch/", headers=headers)
 
-    # Faz uma requisição GET para a URL especificada com o número da página e cabeçalho
-    resposta = requests.get(f"https://www.magazineluiza.com.br/busca/nintendo+switch/?page={page_number}", headers=headers)
-    
-    # Analisa o conteúdo HTML da resposta usando BeautifulSoup
-    sopa = BeautifulSoup(resposta.text, 'html.parser')
-    
-    # Formata o conteúdo da página HTML de forma legível
-    page_content = sopa.prettify()
+# Analisa o conteúdo HTML da resposta usando BeautifulSoup
+sopa = BeautifulSoup(resposta.text, 'html.parser')
 
-    # define o caminho inbound da external location da storage account
-    file_path = f"abfss://{env}@nintendostorageaccount.dfs.core.windows.net/magalu/inbound/page{page_number}_{current_date}.txt"
+# Formata o conteúdo da página HTML de forma legível
+page_content = sopa.prettify()
 
-    # Escreve o conteúdo da página no arquivo usando dbutils.fs.put
-    dbutils.fs.put(file_path, page_content, overwrite=True)
+# define o caminho inbound da external location da storage account
+file_path = f"abfss://{env}@nintendostorageaccount.dfs.core.windows.net/magalu/inbound/{current_date}.txt"
+
+# Escreve o conteúdo da página no arquivo usando dbutils.fs.put
+dbutils.fs.put(file_path, page_content, overwrite=True)
+
+# COMMAND ----------
+
+#deletando arquivos que já possuem um tempo de armazenamento maior que 30 dias
+
+path = f"abfss://{env}@nintendostorageaccount.dfs.core.windows.net/magalu/inbound"
+
+deleting_files_range_30(path)

@@ -42,6 +42,7 @@ env = config["env"]
 
 # Adiciona o caminho do diretório 'meus_scripts_pyspark' ao sys.path
 # Isso permite que módulos Python localizados nesse diretório sejam importados
+# Diretorio referente a funções de pyspark
 sys.path.append(f'{current_dir}/meus_scripts_pyspark')
 
 # COMMAND ----------
@@ -49,6 +50,22 @@ sys.path.append(f'{current_dir}/meus_scripts_pyspark')
 from organize_files import process_data_to_bronze
 from change_null_string import change_null_string
 from change_null_numeric import change_null_numeric
+from union_df import union_df
+from remove_extra_spaces import remove_extra_spaces
+from lower_string_column import lower_string_column
+from convert_currency_column import convert_currency_column
+
+# COMMAND ----------
+
+# Adiciona o caminho do diretório 'meus_scripts_pytest' ao sys.path
+# Isso permite que módulos Python localizados nesse diretório sejam importados
+# Diretorio referente a funções de pytest
+sys.path.append(f'{current_dir}/meus_scripts_pytest')
+
+# COMMAND ----------
+
+from df_not_empty import df_not_empty
+from schema_equals_df_schema import schema_equals_df_schema
 
 # COMMAND ----------
 
@@ -59,9 +76,10 @@ schema = StructType([
     StructField("condition_promo", StringType(), True), # Condição promocional do produto
     StructField("preco_promo", DoubleType(), True),      # Preço promocional do produto
     StructField("parcelado", StringType(), True),        # Valor parcelado do produto
-    StructField("imagem", StringType(), True),          # URL da imagem do produto
+    StructField("link", StringType(), True),          # URL do link do produto
     StructField("file_name", StringType(), True),          # Origem da extração do produto
-    StructField("file_date", DateType(), True)          # Data do arquivo
+    StructField("file_date", DateType(), True),          # Data do arquivo
+    StructField("status", StringType(), True),          # Status do registro
 ])
 
 # COMMAND ----------
@@ -72,7 +90,11 @@ bronze_path = f'abfss://{env}@nintendostorageaccount.dfs.core.windows.net/magalu
 # Lendo arquivos JSON do diretório bronze com a opção de multiline ativada
 mg = spark.read.option("multiline", "true").json(bronze_path)
 
-mg = process_data_to_bronze(mg,'imagem')
+mg = process_data_to_bronze(mg,'link')
+
+# COMMAND ----------
+
+df_not_empty(mg)
 
 # COMMAND ----------
 
@@ -82,35 +104,40 @@ bronze_path = f'abfss://{env}@nintendostorageaccount.dfs.core.windows.net/mercad
 # Lendo arquivos JSON do diretório bronze com a opção de multiline ativada
 ml = spark.read.option("multiline", "true").json(bronze_path)
 
-ml = process_data_to_bronze(ml,'imagem')
+ml = process_data_to_bronze(ml,'link')
 
 # COMMAND ----------
 
-def unir_dataframes(df1, df2):
-    """
-    Une dois DataFrames pelo nome das colunas, permitindo colunas ausentes.
+df_not_empty(ml)
 
-    Parâmetros:
-    df1 (DataFrame): O primeiro DataFrame.
-    df2 (DataFrame): O segundo DataFrame.
+# COMMAND ----------
 
-    Retorna:
-    DataFrame: Um novo DataFrame resultante da união dos dois DataFrames de entrada.
-    """
-    return df1.unionByName(df2, allowMissingColumns=True)
-
-df = unir_dataframes(ml, mg)
+df = union_df(ml, mg)
 
 # COMMAND ----------
 
 # Seleciona as colunas específicas do DataFrame para manter no resultado final
-df = df.select('titulo', 'moeda', 'condition_promo', 'preco_promo', 'parcelado', 'imagem', 'file_name', 'file_date')
+df = df.select('titulo', 'moeda', 'condition_promo', 'preco_promo', 'parcelado', 'link', 'file_name', 'file_date', 'status')
 
 # COMMAND ----------
 
-# Remove caracteres não numéricos e vírgulas da coluna 'preco_promo', 
-# em seguida, converte o valor para o tipo double
-df = df.withColumn('preco_promo', regexp_replace(trim(col('preco_promo')), r'[^\d,]', '').cast('double'))
+# Atualizando a coluna 'moeda' com base nas condições especificadas
+df = df.withColumn(
+    "moeda",
+    when(
+        (col("moeda") != "R$") & (col("preco_promo").rlike(r"ou|[$€£¥]")),
+        regexp_extract(col("preco_promo"), r"(R[$€£¥])", 1)
+    ).otherwise(col("moeda"))
+)
+
+# COMMAND ----------
+
+df = df.withColumn("condition_promo", regexp_replace("condition_promo", r"[()]", ""))
+df = df.withColumn("condition_promo", regexp_replace("condition_promo", "de desconto no pix", "OFF"))
+
+# COMMAND ----------
+
+df = convert_currency_column(df, 'preco_promo')
 
 # COMMAND ----------
 
@@ -119,8 +146,13 @@ df = spark.createDataFrame(df.rdd, schema)
 
 # COMMAND ----------
 
-# Remove espaços em branco extras da coluna 'parcelado'
-df = df.withColumn('parcelado', regexp_replace(trim(col('parcelado')), r'\s+', ' '))
+schema_equals_df_schema(df,schema)
+
+# COMMAND ----------
+
+# Função para remover espaços em branco extras de todas as colunas de string
+df = remove_extra_spaces(df)
+
 
 # COMMAND ----------
 
@@ -134,12 +166,23 @@ df = change_null_string(df)
 
 # COMMAND ----------
 
+# Função para extrair a origem e remover a coluna 'file_name'
+def extrair_origem(df):
+    df = df.withColumn('origem', regexp_extract(col('file_name'), rf'abfss://{env}@nintendostorageaccount.dfs.core.windows.net/(.*?)/bronze/', 1)) \
+           .drop('file_name')
+    return df
+
+# Exemplo de uso
+df = extrair_origem(df)
+
+# COMMAND ----------
+
 # Função para extrair a memória do título do produto e registra a função como UDF
 def extrair_memoria(info):
     import re
     if isinstance(info, str) and info:
-        padrao = r'(\d+)\s*(G[gBb])'
-        resultado = re.search(padrao, info)
+        padrao = r'(\d+)\s*(G[Bb])'
+        resultado = re.search(padrao, info, re.IGNORECASE)
         if resultado:
             return resultado.group(0)
     return '-'
@@ -149,13 +192,20 @@ extrair_memoria_udf = udf(extrair_memoria, StringType())
 # Adiciona a coluna 'memoria' extraída do título do produto e colunas 'oled', 'lite' e 'joy_con' baseadas em padrões regex no título do produto
 df = df.withColumn('memoria', extrair_memoria_udf(col('titulo'))) \
        .withColumn('oled', when(col('titulo').rlike('(?i)Oled'), 'Sim').otherwise('Nao')) \
-       .withColumn('lite', when(col('titulo').rlike('(?i)Lite'), 'Sim').otherwise('Nao')) \
-       .withColumn('joy_con', when(col('titulo').rlike('(?i)Joy-con'), 'Sim').otherwise('Nao'))
+       .withColumn('lite', when(col('titulo').rlike('(?i)Lite'), 'Sim').otherwise('Nao'))
 
 # COMMAND ----------
 
-# Filtra o DataFrame para manter apenas as linhas onde a coluna 'titulo' começa com a palavra 'console' (case insensitive)
-df = df.filter(col("titulo").rlike("(?i)^console"))
+# Filtra o DataFrame para manter apenas as linhas onde a coluna 'titulo' começa com a palavra 'console' e contém 'switch' (case insensitive)
+df = df.filter(col("titulo").rlike("(?i)^console.*switch"))
+
+# COMMAND ----------
+
+df = lower_string_column(df, 'memoria')
+
+# COMMAND ----------
+
+df_not_empty(df)
 
 # COMMAND ----------
 

@@ -12,6 +12,7 @@ import datetime
 import re
 import os
 import json
+import sys
 
 # COMMAND ----------
 
@@ -30,6 +31,16 @@ with open(config_path, "r") as f:
 
 # Obtém o valor da chave "env" do dicionário de configuração
 env = config["env"]
+
+# COMMAND ----------
+
+# Adiciona o caminho do diretório 'meus_scripts_pyspark' ao sys.path
+# Isso permite que módulos Python localizados nesse diretório sejam importados
+sys.path.append(f'{current_dir}/meus_scripts_pyspark')
+
+# COMMAND ----------
+
+from deleting_files_range_30_days import deleting_files_range_30
 
 # COMMAND ----------
 
@@ -53,3 +64,11 @@ file_path = f"abfss://{env}@nintendostorageaccount.dfs.core.windows.net/mercadol
 
 # Escreve o conteúdo da página no arquivo usando dbutils.fs.put
 dbutils.fs.put(file_path, page_content, overwrite=True)
+
+# COMMAND ----------
+
+#deletando arquivos que já possuem um tempo de armazenamento maior que 30 dias
+
+path = f"abfss://{env}@nintendostorageaccount.dfs.core.windows.net/mercadolivre/inbound"
+
+deleting_files_range_30(path)
