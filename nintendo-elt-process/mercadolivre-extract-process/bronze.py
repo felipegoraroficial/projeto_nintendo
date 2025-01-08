@@ -60,35 +60,37 @@ data_atual = datetime.now().strftime("%Y-%m-%d")
 # COMMAND ----------
 
 # Filtrando a lista com a data_atual 
-currrent_files_path = [arquivo for arquivo in file_paths if data_atual in arquivo] 
+currrent_files_path = next((arquivo for arquivo in file_paths if data_atual in arquivo), None)
 
 # COMMAND ----------
 
 if currrent_files_path:
 
-    for file_path in file_paths:  # Itera sobre cada arquivo na lista de arquivos
+    list_todos = []  # Inicializa uma lista vazia para armazenar os dados extraídos
 
-        list_todos = []  # Inicializa uma lista vazia para armazenar os dados extraídos
+    df = spark.read.text(currrent_files_path)
+    html_content = "\n".join(row.value for row in df.collect())
 
-        df = spark.read.text(file_path)
-        html_content = "\n".join(row.value for row in df.collect())
+    sopa_bonita = BeautifulSoup(html_content, 'html.parser')  # Analisa o conteúdo HTML usando BeautifulSoup
 
-        sopa_bonita = BeautifulSoup(html_content, 'html.parser')  # Analisa o conteúdo HTML usando BeautifulSoup
+    list_titulo = sopa_bonita.find_all('h2', {'class': 'poly-box poly-component__title'})
 
-        list_titulo = sopa_bonita.find_all('h2', {'class': 'poly-box poly-component__title'})
+    for i in list_titulo:
 
-        for i in list_titulo:
+        link = i.find('a')['href']
 
-            link = i.find('a')['href']
+        # Define o cabeçalho do agente de usuário para a requisição HTTP
+        headers = {'user-agent': 'Mozilla/5.0'}
 
-            # Define o cabeçalho do agente de usuário para a requisição HTTP
-            headers = {'user-agent': 'Mozilla/5.0'}
+        # Faz uma requisição GET para a URL especificada com o número da página e cabeçalho
+        resposta = requests.get(link, headers=headers)
 
-            # Faz uma requisição GET para a URL especificada com o número da página e cabeçalho
-            resposta = requests.get(link, headers=headers)
+        # Analisa o conteúdo HTML da resposta usando BeautifulSoup
+        sopa_bonita = BeautifulSoup(resposta.text, 'html.parser')
 
-            # Analisa o conteúdo HTML da resposta usando BeautifulSoup
-            sopa_bonita = BeautifulSoup(resposta.text, 'html.parser')
+        if sopa_bonita.find('div', class_='ui-pdp-shipping-message__text'):
+            print('Este produto está indisponível')
+        else:
 
             titulo = sopa_bonita.find('h1', class_='ui-pdp-title').text
 
@@ -119,8 +121,8 @@ if currrent_files_path:
                 'link': link
             })  # Adiciona os dados extraídos à lista
 
-        json_file_path = file_path.replace('inbound', 'bronze').replace('.txt', '.json')  # Define o caminho do arquivo JSON de saída
-        dbutils.fs.put(json_file_path, json.dumps(list_todos, ensure_ascii=False, indent=4), overwrite=True)  # Salva os dados extraídos no arquivo JSON
+    json_file_path = currrent_files_path.replace('inbound', 'bronze').replace('.txt', '.json')  # Define o caminho do arquivo JSON de saída
+    dbutils.fs.put(json_file_path, json.dumps(list_todos, ensure_ascii=False, indent=4), overwrite=True)  # Salva os dados extraídos no arquivo JSON
 
 else:
     print(f"Não existe arquivo extraído na data de {data_atual}")
