@@ -168,7 +168,7 @@ df = change_null_string(df)
 
 # Função para extrair a origem e remover a coluna 'file_name'
 def extrair_origem(df):
-    df = df.withColumn('origem', regexp_extract(col('file_name'), rf'abfss://{env}@nintendostorageaccount.dfs.core.windows.net/(.*?)/bronze/', 1)) \
+    df = df.withColumn('origem', regexp_extract(col('file_name'), rf'dbfs:/Volumes/nintendo_databricks/{env}/(.*?)-vol/bronze/', 1)) \
            .drop('file_name')
     return df
 
