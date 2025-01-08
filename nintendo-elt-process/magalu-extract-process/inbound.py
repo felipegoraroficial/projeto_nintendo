@@ -60,7 +60,7 @@ sopa = BeautifulSoup(resposta.text, 'html.parser')
 page_content = sopa.prettify()
 
 # define o caminho inbound da external location da storage account
-file_path = f"abfss://{env}@nintendostorageaccount.dfs.core.windows.net/magalu/inbound/{current_date}.txt"
+file_path = f'/Volumes/nintendo_databricks/{env}/magalu-vol/inbound/{current_date}.txt'
 
 # Escreve o conteúdo da página no arquivo usando dbutils.fs.put
 dbutils.fs.put(file_path, page_content, overwrite=True)
@@ -69,6 +69,6 @@ dbutils.fs.put(file_path, page_content, overwrite=True)
 
 #deletando arquivos que já possuem um tempo de armazenamento maior que 30 dias
 
-path = f"abfss://{env}@nintendostorageaccount.dfs.core.windows.net/magalu/inbound"
+path = f"/Volumes/nintendo_databricks/{env}/magalu-vol/inbound"
 
 deleting_files_range_30(path)

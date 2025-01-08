@@ -45,7 +45,7 @@ from deleting_files_range_30_days import deleting_files_range_30
 # COMMAND ----------
 
 # Caminho para o diretório de entrada
-inbound_path = f"abfss://{env}@nintendostorageaccount.dfs.core.windows.net/mercadolivre/inbound"
+inbound_path = f"/Volumes/nintendo_databricks/{env}/mercadolivre-vol/inbound"
 
 # Lista todos os arquivos no diretório de entrada que terminam com ".txt"
 file_paths = [
@@ -73,7 +73,7 @@ if currrent_files_path:
 
     sopa_bonita = BeautifulSoup(html_content, 'html.parser')  # Analisa o conteúdo HTML usando BeautifulSoup
 
-    list_titulo = sopa_bonita.find_all('h2', {'class': 'poly-box poly-component__title'})
+    list_titulo = sopa_bonita.find_all('h2', {'class': 'poly-component__title-wrapper'})
 
     for i in list_titulo:
 
@@ -102,13 +102,13 @@ if currrent_files_path:
             desconto = desconto.text if desconto else "sem desconto"
 
             moeda = preco.find('span', class_='andes-money-amount__currency-symbol').text
-            
-            parcelamento = "sem parcelamento"
 
             if sopa_bonita.find('p', class_='ui-pdp-color--GREEN ui-pdp-size--MEDIUM ui-pdp-family--REGULAR'):
                 parcelamento = sopa_bonita.find('p', class_='ui-pdp-color--GREEN ui-pdp-size--MEDIUM ui-pdp-family--REGULAR').text
             elif sopa_bonita.find('p', class_='ui-pdp-color--BLACK ui-pdp-size--MEDIUM ui-pdp-family--REGULAR'):
                 parcelamento = sopa_bonita.find('p', class_='ui-pdp-color--BLACK ui-pdp-size--MEDIUM ui-pdp-family--REGULAR').text
+            else:
+                parcelamento = "sem parcelamento"
 
             titulo, preco_valor, desconto, moeda, parcelamento
 
@@ -132,6 +132,6 @@ else:
 
 #deletando arquivos que já possuem um tempo de armazenamento maior que 30 dias
 
-path = f"abfss://{env}@nintendostorageaccount.dfs.core.windows.net/mercadolivre/bronze"
+path = f"/Volumes/nintendo_databricks/{env}/mercadolivre-vol/bronze"
 
 deleting_files_range_30(path)
