@@ -60,63 +60,61 @@ data_atual = datetime.now().strftime("%Y-%m-%d")
 # COMMAND ----------
 
 # Filtrando a lista com a data_atual 
-currrent_files_path = [arquivo for arquivo in file_paths if data_atual in arquivo] 
+currrent_files_path = next((arquivo for arquivo in file_paths if data_atual in arquivo), None)
 
 # COMMAND ----------
 
 if currrent_files_path:
 
-    for file_path in file_paths:  # Itera sobre cada arquivo na lista de arquivos
+    list_todos = []  # Inicializa uma lista vazia para armazenar os dados extraídos
 
-        list_todos = []  # Inicializa uma lista vazia para armazenar os dados extraídos
+    df = spark.read.text(currrent_files_path)
+    html_content = "\n".join(row.value for row in df.collect())
 
-        df = spark.read.text(file_path)
-        html_content = "\n".join(row.value for row in df.collect())
+    sopa_bonita = BeautifulSoup(html_content, 'html.parser')  # Analisa o conteúdo HTML usando BeautifulSoup
 
-        sopa_bonita = BeautifulSoup(html_content, 'html.parser')  # Analisa o conteúdo HTML usando BeautifulSoup
+    list_links = sopa_bonita.find_all('a', {'data-testid': 'product-card-container'}) # Encontra todos os links de produtos # Extrair todos os hrefs dos links 
+    links = [link['href'] for link in list_links if 'href' in link.attrs]
 
-        list_links = sopa_bonita.find_all('a', {'data-testid': 'product-card-container'}) # Encontra todos os links de produtos # Extrair todos os hrefs dos links 
-        links = [link['href'] for link in list_links if 'href' in link.attrs]
+    for link in links:
 
-        for link in links:
+        link = 'https://www.magazineluiza.com.br' + link
 
-            link = 'https://www.magazineluiza.com.br' + link
+        # Define o cabeçalho do agente de usuário para a requisição HTTP
+        headers = {'user-agent': 'Mozilla/5.0'}
 
-            # Define o cabeçalho do agente de usuário para a requisição HTTP
-            headers = {'user-agent': 'Mozilla/5.0'}
+        # Faz uma requisição GET para a URL especificada com o número da página e cabeçalho
+        resposta = requests.get(link, headers=headers)
 
-            # Faz uma requisição GET para a URL especificada com o número da página e cabeçalho
-            resposta = requests.get(link, headers=headers)
+        # Analisa o conteúdo HTML da resposta usando BeautifulSoup
+        sopa_bonita = BeautifulSoup(resposta.text, 'html.parser')
 
-            # Analisa o conteúdo HTML da resposta usando BeautifulSoup
-            sopa_bonita = BeautifulSoup(resposta.text, 'html.parser')
+        titulo = sopa_bonita.find('h1', {'data-testid': 'heading-product-title'}).text
 
-            titulo = sopa_bonita.find('h1', {'data-testid': 'heading-product-title'}).text
+        preco = sopa_bonita.find('p', {'data-testid': 'price-value'}).text
 
-            preco = sopa_bonita.find('p', {'data-testid': 'price-value'}).text
+        desconto = "sem desconto"
 
-            desconto = "sem desconto"
+        if sopa_bonita.find('span', class_='sc-fyVfxW bBlpKX'):
+            desconto = sopa_bonita.find('span', class_='sc-fyVfxW bBlpKX').text
 
-            if sopa_bonita.find('span', class_='sc-fyVfxW bBlpKX'):
-                desconto = sopa_bonita.find('span', class_='sc-fyVfxW bBlpKX').text
+        moeda = preco[0] + preco[1]
 
-            moeda = preco[0] + preco[1]
+        parcelamento = sopa_bonita.find('p', class_='sc-dcJsrY bdQQwX sc-joQczN fWWRYL').text
 
-            parcelamento = sopa_bonita.find('p', class_='sc-dcJsrY bdQQwX sc-joQczN fWWRYL').text
+        titulo, preco, desconto, moeda, parcelamento
 
-            titulo, preco, desconto, moeda, parcelamento
+        list_todos.append({
+            'titulo': titulo,
+            'moeda': moeda,
+            'preco_promo': preco,
+            'condition_promo': desconto,
+            'parcelado': parcelamento,
+            'link': link
+        })  # Adiciona os dados extraídos à lista
 
-            list_todos.append({
-                'titulo': titulo,
-                'moeda': moeda,
-                'preco_promo': preco,
-                'condition_promo': desconto,
-                'parcelado': parcelamento,
-                'link': link
-            })  # Adiciona os dados extraídos à lista
-
-        json_file_path = file_path.replace('inbound', 'bronze').replace('.txt', '.json')  # Define o caminho do arquivo JSON de saída
-        dbutils.fs.put(json_file_path, json.dumps(list_todos, ensure_ascii=False, indent=4), overwrite=True)  # Salva os dados extraídos no arquivo JSON
+    json_file_path = currrent_files_path.replace('inbound', 'bronze').replace('.txt', '.json')  # Define o caminho do arquivo JSON de saída
+    dbutils.fs.put(json_file_path, json.dumps(list_todos, ensure_ascii=False, indent=4), overwrite=True)  # Salva os dados extraídos no arquivo JSON
 
 else:
     print(f"Não existe arquivo extraído na data de {data_atual}")
