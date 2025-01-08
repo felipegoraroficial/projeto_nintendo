@@ -100,6 +100,8 @@ if currrent_files_path:
 
         moeda = preco[0] + preco[1]
 
+        parcelamento = "sem parcelamento"
+
         if sopa_bonita.find('p', class_='sc-dcJsrY bdQQwX sc-joQczN fWWRYL'):
             parcelamento = sopa_bonita.find('p', class_='sc-dcJsrY bdQQwX sc-joQczN fWWRYL').text
 
