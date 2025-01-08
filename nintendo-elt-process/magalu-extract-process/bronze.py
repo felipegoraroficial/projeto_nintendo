@@ -45,7 +45,7 @@ from deleting_files_range_30_days import deleting_files_range_30
 # COMMAND ----------
 
 # Caminho para o diretório de entrada
-inbound_path = f"abfss://{env}@nintendostorageaccount.dfs.core.windows.net/magalu/inbound"
+inbound_path = f"/Volumes/nintendo_databricks/{env}/magalu-vol/inbound"
 
 # Lista todos os arquivos no diretório de entrada que terminam com ".txt"
 file_paths = [
@@ -123,6 +123,6 @@ else:
 
 #deletando arquivos que já possuem um tempo de armazenamento maior que 30 dias
 
-path = f"abfss://{env}@nintendostorageaccount.dfs.core.windows.net/magalu/bronze"
+path = f"/Volumes/nintendo_databricks/{env}/magalu-vol/bronze"
 
 deleting_files_range_30(path)

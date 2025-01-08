@@ -31,11 +31,12 @@ with open(config_path, "r") as f:
 
 # Obtém o valor da chave "env" do dicionário de configuração
 env = config["env"]
+storage = config["storage"]
 
 # COMMAND ----------
 
 # Define o caminho do diretório Silver no Azure Data Lake Storage
-silver_path = f'abfss://{env}@nintendostorageaccount.dfs.core.windows.net/silver/'
+silver_path = f'/Volumes/nintendo_databricks/{env}/silver-vol'
 
 # Lê os dados do diretório Silver no formato Parquet e carrega em um DataFrame Spark
 df = spark.read.parquet(silver_path)
@@ -59,7 +60,8 @@ CREATE EXTERNAL TABLE IF NOT EXISTS {env}.`nintendo-bigtable` (
     lite STRING
 )
 USING DELTA
-LOCATION 'abfss://{env}@nintendostorageaccount.dfs.core.windows.net/gold/'
+LOCATION 'abfss://{env}@{storage}.dfs.core.windows.net/gold/'
+PARTITIONED BY (file_date)
 """
 
 # Executa a consulta SQL para criar a tabela externa
@@ -95,4 +97,4 @@ novos_registros.write \
   .mode("append") \
   .option("overwriteSchema", "true") \
   .partitionBy("file_date") \
-  .save(f"abfss://{env}@nintendostorageaccount.dfs.core.windows.net/gold")
+  .save(f"abfss://{env}@{storage}.dfs.core.windows.net/gold")
