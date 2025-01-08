@@ -3,7 +3,7 @@ WITH detailstabela AS (
         *,
         ROW_NUMBER() OVER (ORDER BY link) AS id_temp
     FROM
-        {{ source("nintendo_projeto", "nintendo-bigtable") }}
+        {{ source("nintendo_projeto_dev", "nintendo-bigtable") }}
 )
 
 SELECT 
