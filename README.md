@@ -40,8 +40,8 @@ Os scripts são versionados e separados por ambientes de desenvolvimento (dev) e
 
 ![lineage-dbt](https://github.com/user-attachments/assets/ebe099b3-0a17-4a2d-a6ec-f757f5899d3c)
 
-6. **Automatização e Notificação**:
-    - **Objetivo**: Automatizar todo o processo via workflows e notificações de falhas ou tempo limite.
+6. **Monitoramento e Notificação**:
+    - **Objetivo**: Automatizar todo o processo via workflows, gerando log do processo e notificações de falhas ou tempo limite.
     - **Benefício**: Aumenta a eficiência operacional e permite resposta rápida a problemas.
 
 ![pipeline-databricks](https://github.com/user-attachments/assets/93406bfd-c9ff-4ef1-a73d-fd4ef107ed01)
@@ -78,7 +78,11 @@ Com o Azure Databricks criado sem nenhuma particularidade específica, basta ace
 ![catalog-databricks](https://github.com/user-attachments/assets/d7f78cb4-0826-405d-b15f-d28e51efb85c)
 
 - No espaço de trabalho, crie duas pastas, dev e prd, para separar os códigos em cada branch.
-
+- Importe os reseguintes repositórios para cada pasta com suas respectivas branches:
+  https://github.com/felipegoraroficial/projeto_nintendo.git (o repositório do projeto)
+  https://github.com/felipegoraroficial/meus_scripts_pyspark.git (o repositório referente a funções pypark para tratativas de dados do projeto)
+  https://github.com/felipegoraroficial/meus_scripts_pytest.git (o repositório referente a testes de dados do projeto)
+  
 ![workspace - databricks](https://github.com/user-attachments/assets/68fc0f43-25e4-4d7a-979c-9b49ccb5b038)
   
 - Criação de uma credencial externa no cálogo.
