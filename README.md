@@ -134,3 +134,4 @@ Com o Azure Databricks criado sem nenhuma particularidade específica, basta ace
 - Crie um painel com as fontes de dados da tabela log-table em ambos os schemas.
 
 ![fonte-dados-painel](https://github.com/user-attachments/assets/db5f2d29-086c-4ef1-9e49-58546d1996d9)
+  
