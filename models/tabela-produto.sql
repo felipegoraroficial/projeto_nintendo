@@ -4,7 +4,7 @@ WITH producttabela AS (
         *,
         ROW_NUMBER() OVER (ORDER BY link) AS id_temp -- Cria uma coluna id_temp com numeração sequencial baseada no campo 'link'
     FROM
-        {{ source("nintendo_projeto_prd", "nintendo-bigtable") }} -- Fonte de dados: tabela "nintendo-bigtable" no projeto "nintendo_projeto_prd"
+        {{ source("nintendo_projeto_dev", "nintendo-bigtable") }} -- Fonte de dados: tabela "nintendo-bigtable" no projeto "nintendo_projeto_dev"
 )
 
 -- Etapa 2: Seleção dos dados da CTE 'producttabela'
