@@ -99,10 +99,11 @@ if tabela.rdd.isEmpty():
 
 else:
     # Realize uma junção à esquerda (left anti join) para encontrar os novos registros
-    condicao_join = (df["link"] == tabela["link"]) & (df["status"] == tabela["status"]) & (df["file_date"] == tabela["file_date"])
+    condicao_join = (df["link"] != tabela["link"]) & (df["file_date"] != tabela["file_date"])
     novos_registros = verify_new_lines(df, tabela, condicao_join)
 
-    display(novos_registros)
+#filtra apenas registros ativos
+novos_registros = novos_registros.filter(novos_registros['status'] == 'ativo')
 
 # COMMAND ----------
 
