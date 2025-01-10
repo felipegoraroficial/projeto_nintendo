@@ -10,6 +10,8 @@ No dbt, é feita a conexão do catálogo do Databricks e são criadas views de n
 
 Todo o processo ocorre no workflow do Databricks de forma agendada, com alertas enviados por e-mail em caso de tempo de processo ou falha.
 
+No final do processo do pipeline é gerado um log do workflow e armazenado em uma tabela do databricks que serve de fonte de dados ao dashboard de monitoramento do pipeline.
+
 Os scripts são versionados e separados por ambientes de desenvolvimento (dev) e produção (prd).
 
 ![arquitetura-projeto-nintendo](https://github.com/user-attachments/assets/7e06bcbe-da5e-42a4-a9d2-bf7abaf7a238)
@@ -26,7 +28,7 @@ Os scripts são versionados e separados por ambientes de desenvolvimento (dev) e
 
 3. **Integração e Limpeza de Dados com PySpark**:
     - **Objetivo**: Unificar os dados extraídos em um único dataframe e realizar a limpeza e tratamento dos mesmos.
-    - **Benefício**: Melhoria da qualidade dos dados, com correção de valores nulos e extração de informações adicionais dos títulos dos anúncios.
+    - **Benefício**: Melhoria da qualidade dos dados, com correção de valores nulos e extração de informações adicionais dos títulos dos anúncios. Além disso, por se tratar de Spark, os dados são escalonáveis, suportando big data.
 
 4. **Armazenamento Seguro dos Dados**:
     - **Objetivo**: Armazenar dados tratados em uma external table no Databricks, garantindo a segurança e integridade dos dados.
@@ -41,8 +43,10 @@ Os scripts são versionados e separados por ambientes de desenvolvimento (dev) e
 ![lineage-dbt](https://github.com/user-attachments/assets/ebe099b3-0a17-4a2d-a6ec-f757f5899d3c)
 
 6. **Monitoramento e Notificação**:
-    - **Objetivo**: Automatizar todo o processo via workflows, gerando log do processo e notificações de falhas ou tempo limite.
+    - **Objetivo**: Automatizar todo o processo via workflows, gerando log do processo para criação de um dashboard de monitoramento e notificações de falhas ou tempo limite por e-mail.
     - **Benefício**: Aumenta a eficiência operacional e permite resposta rápida a problemas.
+
+![dashboard-monitoramento](https://github.com/user-attachments/assets/99bb03ff-c23f-4215-936b-54ad73388899)
 
 ![pipeline-databricks](https://github.com/user-attachments/assets/93406bfd-c9ff-4ef1-a73d-fd4ef107ed01)
 
@@ -54,8 +58,8 @@ Os scripts são versionados e separados por ambientes de desenvolvimento (dev) e
 
 - Com o grupo de recursos criado, o primeiro passo foi a criação de uma conta de armazenamento Gen2 com redundância local e camada cool, pois os dados serão acessados com pouca frequência por se tratar de um processo batch.
 - Na mesma conta de armazenamento, foram criados dois containers, dev e prd, para separar os dados de produção daqueles em desenvolvimento.
-- Em cada container, foram criados volumes do Databricks com link externospara definição de uma hierarquia de pastas que será utilizada para a construção do processo ELTL no modelo de medalhão, onde temos os seguintes dados:
-    - Inbound: Dados brutos conforme vêm da extração web em formato HTML, separados pela paginação e data da extração.
+- Em cada container, foram criados volumes do Databricks com link externos para definição de uma hierarquia de pastas que será utilizada para a construção do processo ELTL no modelo de medalhão, onde temos os seguintes dados:
+    - Inbound: Dados brutos conforme vêm da extração web em formato HTML, separados pela data da extração.
     - Bronze: Identificação dos elementos web necessários para o projeto e armazenados em um arquivo JSON conforme a data do arquivo de extração.
     - Silver: União de todos os arquivos em seus diferentes diretórios e o tratamento de limpeza e ajuste dos dados.
     - Gold: Criação da external table no databricks com a fonte de dados na conta de armazenamento particionada pela data de extração.
@@ -75,7 +79,7 @@ Com o Azure Databricks criado sem nenhuma particularidade específica, basta ace
 
 - Criação de schemas Dev e Prd no Catálogo do Databricks para separar os dados em ambientes.
 
-![catalog-databricks](https://github.com/user-attachments/assets/d7f78cb4-0826-405d-b15f-d28e51efb85c)
+![catalog-databricks](https://github.com/user-attachments/assets/0d2f82cd-e585-4161-a853-2ac4396dc037)
 
 - No espaço de trabalho, crie duas pastas, dev e prd, para separar os códigos em cada branch.
 - Importe os reseguintes repositórios para cada pasta com suas respectivas branches:
@@ -91,7 +95,7 @@ Com o Azure Databricks criado sem nenhuma particularidade específica, basta ace
 
 ![volume-databricks](https://github.com/user-attachments/assets/455722a8-8466-4e08-9e8c-6f86377bd2e7)
 
-### 3.Craição de um Acess Conector
+### 3.Criação de um Acess Conector
 
 - Crie um Acess Conector com a mesma região e grupo de recurso do projeto.
 - Atribua a função de Colaborador de Dados do Storage Blob ao acess conector.
@@ -125,4 +129,9 @@ Com o Azure Databricks criado sem nenhuma particularidade específica, basta ace
 
 ![details-workflow](https://github.com/user-attachments/assets/2a2586db-50fd-4b68-aaaf-ac0f9e7422fe)
 
+### 7.Dashboard Monitoramento via Databricks
+
+- Crie um painel com as fontes de dados da tabela log-table em ambos os schemas.
+
+![fonte-dados-painel](https://github.com/user-attachments/assets/db5f2d29-086c-4ef1-9e49-58546d1996d9)
   
