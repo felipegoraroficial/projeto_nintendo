@@ -88,7 +88,7 @@ from verify_new_lines import verify_new_lines
 
 # Carregando tabela gold antiga
 try:
-    tabela = spark.read.table("nintendo_databricks.dev.`nintendo-bigtable`")
+    tabela = spark.read.table(f"nintendo_databricks.{env}.`nintendo-bigtable`")
 except:
     pass
 
