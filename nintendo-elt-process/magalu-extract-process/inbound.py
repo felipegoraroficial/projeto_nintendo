@@ -2,14 +2,23 @@
 # MAGIC %md
 # MAGIC # Objetivo do Notebook
 # MAGIC
-# MAGIC Este notebook tem como objetivo realizar a extração de dados relacionados ao projeto Nintendo. Utilizando bibliotecas como `requests` e `BeautifulSoup`, o notebook faz a coleta de dados da web, processa e transforma esses dados conforme necessário, e finalmente carrega os dados processados em um formato adequado para análise posterior. Além disso, o notebook utiliza um arquivo de configuração (`config.json`) para definir parâmetros importantes, como o ambiente de execução.
+# MAGIC Este notebook tem como objetivo realizar a extração de dados relacionados ao projeto Nintendo. Utilizando bibliotecas como `requests` e `BeautifulSoup`.
+# MAGIC
+# MAGIC 1- faz leitura do arquivo json config para obter o env em questão.
+# MAGIC
+# MAGIC 2- importa funções do repositório meus_scripts_pyspark.
+# MAGIC
+# MAGIC 3 - define a data atual para passar o nome do arquivo extraido.
+# MAGIC
+# MAGIC 4 - chama a função req_bsoup para extrair dados html referente a url informada
+# MAGIC
+# MAGIC 5 - define o file path para carregar dados usando dbutils.
+# MAGIC
+# MAGIC 6 - chama a função deleting_files_range_30_days para excluir arquivos com mais de 30 dias armazenados
 
 # COMMAND ----------
 
-import requests
-from bs4 import BeautifulSoup
 import datetime
-import re
 import json
 import os
 import sys
@@ -41,23 +50,18 @@ sys.path.append(f'{current_dir}/meus_scripts_pyspark')
 # COMMAND ----------
 
 from deleting_files_range_30_days import deleting_files_range_30
+from req_bsoup import req_bsoup
 
 # COMMAND ----------
 
 # Obtém a data atual no formato "YYYY-MM-DD"
 current_date = datetime.datetime.now().strftime("%Y-%m-%d")
 
-# Define o cabeçalho do agente de usuário para a requisição HTTP
-headers = {'user-agent': 'Mozilla/5.0'}
+# define a url para scrapy
+url= "https://www.magazineluiza.com.br/busca/nintendo+switch/"
 
-# Faz uma requisição GET para a URL especificada com o número da página e cabeçalho
-resposta = requests.get(f"https://www.magazineluiza.com.br/busca/nintendo+switch/", headers=headers)
-
-# Analisa o conteúdo HTML da resposta usando BeautifulSoup
-sopa = BeautifulSoup(resposta.text, 'html.parser')
-
-# Formata o conteúdo da página HTML de forma legível
-page_content = sopa.prettify()
+# chama a função para extração de dados brutos da url
+page_content = req_bsoup(url)
 
 # define o caminho inbound da external location da storage account
 file_path = f'/Volumes/nintendo_databricks/{env}/magalu-vol/inbound/{current_date}.txt'

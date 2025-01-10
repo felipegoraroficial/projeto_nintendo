@@ -13,8 +13,6 @@
 
 # COMMAND ----------
 
-from pyspark.sql.functions import input_file_name, when, col, regexp_extract, to_date, row_number,udf, lit,regexp_replace,trim
-from pyspark.sql.window import Window
 from pyspark.sql.types import StructType, StructField, StringType, DoubleType, DateType
 import os
 import json
@@ -54,6 +52,12 @@ from union_df import union_df
 from remove_extra_spaces import remove_extra_spaces
 from lower_string_column import lower_string_column
 from convert_currency_column import convert_currency_column
+from type_monetary import type_monetary
+from replace_characters import replace_characters
+from extract_characters import extract_characters
+from filter_like import filter_like
+from extract_memory import extract_memory
+from condition_like import condition_like
 
 # COMMAND ----------
 
@@ -77,7 +81,7 @@ schema = StructType([
     StructField("preco_promo", DoubleType(), True),      # Preço promocional do produto
     StructField("parcelado", StringType(), True),        # Valor parcelado do produto
     StructField("link", StringType(), True),          # URL do link do produto
-    StructField("file_name", StringType(), True),          # Origem da extração do produto
+    StructField("origem", StringType(), True),          # Origem da extração do produto
     StructField("file_date", DateType(), True),          # Data do arquivo
     StructField("status", StringType(), True),          # Status do registro
 ])
@@ -121,19 +125,12 @@ df = df.select('titulo', 'moeda', 'condition_promo', 'preco_promo', 'parcelado',
 
 # COMMAND ----------
 
-# Atualizando a coluna 'moeda' com base nas condições especificadas
-df = df.withColumn(
-    "moeda",
-    when(
-        (col("moeda") != "R$") & (col("preco_promo").rlike(r"ou|[$€£¥]")),
-        regexp_extract(col("preco_promo"), r"(R[$€£¥])", 1)
-    ).otherwise(col("moeda"))
-)
+df = type_monetary(df, "preco_promo")
 
 # COMMAND ----------
 
-df = df.withColumn("condition_promo", regexp_replace("condition_promo", r"[()]", ""))
-df = df.withColumn("condition_promo", regexp_replace("condition_promo", "de desconto no pix", "OFF"))
+df = replace_characters(df, "condition_promo", r"[()]", "")
+df = replace_characters(df, "condition_promo", "de desconto no pix", "OFF")
 
 # COMMAND ----------
 
@@ -166,38 +163,21 @@ df = change_null_string(df)
 
 # COMMAND ----------
 
-# Função para extrair a origem e remover a coluna 'file_name'
-def extrair_origem(df):
-    df = df.withColumn('origem', regexp_extract(col('file_name'), rf'dbfs:/Volumes/nintendo_databricks/{env}/(.*?)-vol/bronze/', 1)) \
-           .drop('file_name')
-    return df
-
-# Exemplo de uso
-df = extrair_origem(df)
+df = extract_characters(df,'origem','origem',rf'dbfs:/Volumes/nintendo_databricks/{env}/(.*?)-vol/bronze/')
 
 # COMMAND ----------
 
-# Função para extrair a memória do título do produto e registra a função como UDF
-def extrair_memoria(info):
-    import re
-    if isinstance(info, str) and info:
-        padrao = r'(\d+)\s*(G[Bb])'
-        resultado = re.search(padrao, info, re.IGNORECASE)
-        if resultado:
-            return resultado.group(0)
-    return '-'
-
-extrair_memoria_udf = udf(extrair_memoria, StringType())
-
-# Adiciona a coluna 'memoria' extraída do título do produto e colunas 'oled', 'lite' e 'joy_con' baseadas em padrões regex no título do produto
-df = df.withColumn('memoria', extrair_memoria_udf(col('titulo'))) \
-       .withColumn('oled', when(col('titulo').rlike('(?i)Oled'), 'Sim').otherwise('Nao')) \
-       .withColumn('lite', when(col('titulo').rlike('(?i)Lite'), 'Sim').otherwise('Nao'))
+df = filter_like(df,"titulo","(?i)^console.*switch")
 
 # COMMAND ----------
 
-# Filtra o DataFrame para manter apenas as linhas onde a coluna 'titulo' começa com a palavra 'console' e contém 'switch' (case insensitive)
-df = df.filter(col("titulo").rlike("(?i)^console.*switch"))
+df = extract_memory(df, 'titulo')
+
+
+# COMMAND ----------
+
+df = condition_like(df, 'oled', 'titulo', '(?i)Oled')
+df = condition_like(df, 'lite', 'titulo', '(?i)Lite')
 
 # COMMAND ----------
 

@@ -2,17 +2,23 @@
 # MAGIC %md
 # MAGIC # Objetivo desse notebook
 # MAGIC
-# MAGIC O objetivo deste notebook é carregar e processar dados do projeto Nintendo, 
-# MAGIC utilizando as configurações especificadas no arquivo config.json. 
-# MAGIC A partir dessas configurações, o notebook ajusta o ambiente de execução 
-# MAGIC e realiza o processamento dos dados na external location;
-# MAGIC É criado uma external table se ela não existir atualmente no catalog e posteriormente os dados são carregados na external table particionando pela coluna file_date
+# MAGIC O objetivo deste notebook é carregar os dados do projeto Nintendo em uma extarnal table onde apenas será registrado novos registro a tabela. 
+# MAGIC
+# MAGIC 1 - faz leitura do arquivo json config para obter o env em questão.
+# MAGIC
+# MAGIC 2 - importa funções do repositório meus_scripts_pyspark.
+# MAGIC
+# MAGIC 3 - Executa uma função sql que cria a external table com a location delta table e partition by file_date, caso a tabela não exista.
+# MAGIC
+# MAGIC 4 - chama a função que identifica novos registro, caso a tabela não exista, o dataframe silver é inserido a external table.
+# MAGIC
+# MAGIC 5 - carrega o dataframe de novos registro na external table
 
 # COMMAND ----------
 
 import os
 import json
-from pyspark.sql.functions import col
+import sys
 
 # COMMAND ----------
 
@@ -69,6 +75,17 @@ spark.sql(query)
 
 # COMMAND ----------
 
+# Adiciona o caminho do diretório 'meus_scripts_pyspark' ao sys.path
+# Isso permite que módulos Python localizados nesse diretório sejam importados
+# Diretorio referente a funções de pyspark
+sys.path.append(f'{current_dir}/meus_scripts_pyspark')
+
+# COMMAND ----------
+
+from verify_new_lines import verify_new_lines
+
+# COMMAND ----------
+
 # Carregando tabela gold antiga
 try:
     tabela = spark.read.table("nintendo_databricks.dev.`nintendo-bigtable`")
@@ -83,7 +100,7 @@ if tabela.rdd.isEmpty():
 else:
     # Realize uma junção à esquerda (left anti join) para encontrar os novos registros
     condicao_join = (df["link"] == tabela["link"]) & (df["status"] == tabela["status"]) & (df["file_date"] == tabela["file_date"])
-    novos_registros = df.join(tabela, condicao_join, how="left_anti")
+    novos_registros = verify_new_lines(df, tabela, condicao_join)
 
     display(novos_registros)
 

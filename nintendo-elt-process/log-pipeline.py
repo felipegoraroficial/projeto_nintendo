@@ -1,27 +1,28 @@
 # Databricks notebook source
-import requests
+# MAGIC %md
+# MAGIC # Objetivo deste notebook
+# MAGIC
+# MAGIC  Este notebook tem como objetivo obter os registro de log do job do workflow do databricks. 
+# MAGIC
+# MAGIC 1- faz leitura do arquivo json config para obter o env em questão.
+# MAGIC
+# MAGIC 2- importa funções do repositório meus_scripts_pyspark.
+# MAGIC
+# MAGIC 3 - chama a função que faz a extração de dados do job.
+# MAGIC
+# MAGIC 4 - transforma os dados extraidos em um dataframe com o schema inserido.
+# MAGIC
+# MAGIC 5 - chama a função responsavel pela limpeza e transformação dos dados de jobs.
+# MAGIC
+# MAGIC 6 - salva os dados em uma tabela do catalog
+
+# COMMAND ----------
+
+import sys
 import json
 import os
 from pyspark.sql.functions import from_unixtime, col, udf, regexp_extract, round, when, split, to_date, date_format
 from pyspark.sql.types import StructType, StructField, StringType, LongType, BooleanType
-
-# COMMAND ----------
-
-def get_job_runs(databricks_instance, token, job_id):
-
-    url = f"https://{databricks_instance}/api/2.0/jobs/runs/list"
-
-    headers = {
-        "Authorization": f"Bearer {token}"
-    }
-
-    params = {"job_id": job_id}
-
-    response = requests.get(url, headers=headers, params=params)
-
-    response.raise_for_status()
-
-    return response.json()
 
 # COMMAND ----------
 
@@ -46,21 +47,19 @@ current_instance = config["instance"]
 
 # COMMAND ----------
 
-log = get_job_runs(current_instance, token, job_id)
+# Adiciona o caminho do diretório 'meus_scripts_pyspark' ao sys.path
+# Isso permite que módulos Python localizados nesse diretório sejam importados
+# Diretorio referente a funções de pyspark
+sys.path.append(f'{current_dir}/meus_scripts_pyspark')
 
 # COMMAND ----------
 
-logs_list = []
-
-for run in log['runs']:
-    logs_list.append(run)
+from get_job_runs_databricks import get_job_runs_databricks
+from clean_job_data_databricks import clean_job_data_databricks
 
 # COMMAND ----------
 
-logs_list
-
-# COMMAND ----------
-
+#define o schema dos dados que serão estraidos do job do databricks
 schema = StructType([
     StructField("job_id", LongType(), True),
     StructField("run_id", LongType(), True),
@@ -91,60 +90,20 @@ schema = StructType([
 
 # COMMAND ----------
 
-df = spark.createDataFrame(logs_list, schema=schema)
+#chamar função que extrai dados de jobs do databricks
+log = get_job_runs_databricks(current_instance, token, job_id)
 
 # COMMAND ----------
 
-df = df.withColumn('start_time', (col('start_time') / 1000).cast('timestamp'))
-df = df.withColumn('end_time', (col('end_time') / 1000).cast('timestamp'))
+#transforma lista json em dataframe com o schema inserido
+df = spark.createDataFrame(log, schema=schema)
 
 # COMMAND ----------
 
-def convert_durantion(ms):
-
-    seconds = ms // 1000
-    minutes = seconds // 60
-    remaining_seconds = seconds % 60
-
-    return f'{minutes}m:{remaining_seconds}s'
-
-convert_durantion_udf = udf(convert_durantion,StringType())
-
-df = df.withColumn('run_duration', convert_durantion_udf(col('run_duration')))
+#executa a função que realiza a limpeza e tratativa de dados do dataframe de jobs do databricks
+df = clean_job_data_databricks(df)
 
 # COMMAND ----------
 
-df = df.withColumn('state', col('status.termination_details.code')) \
-       .withColumn('message', col('status.termination_details.message')) \
-       .drop('status')
-
-# COMMAND ----------
-
-df = df.withColumn('state', when(col('state') == 'RUN_EXECUTION_ERROR', 'FAILED').otherwise(col('state')))
-
-# COMMAND ----------
-
-df = df.withColumn('start_date', to_date(split(col('start_time'), ' ')[0], 'yyyy-MM-dd')) \
-       .withColumn('start_time', date_format(split(col('start_time'), ' ')[1], 'HH:mm:ss.SSS'))
-
-df = df.withColumn('end_date', to_date(split(col('end_time'), ' ')[0], 'yyyy-MM-dd')) \
-       .withColumn('end_time', date_format(split(col('end_time'), ' ')[1], 'HH:mm:ss.SSS'))
-
-# COMMAND ----------
-
-df = df.select('run_name','run_id','creator_user_name','start_date','start_time','end_date','end_time','run_duration','trigger','run_page_url','state','message')
-
-# COMMAND ----------
-
-df = df.withColumn('run_duration_minutes', regexp_extract(col('run_duration'), '(\d+)m', 1).cast('double')) \
-       .withColumn('run_duration_seconds', regexp_extract(col('run_duration'), '(\d+)s', 1).cast('double')) \
-       .withColumn('run_duration', round(col('run_duration_minutes') + col('run_duration_seconds') / 60, 2)) \
-       .drop('run_duration_minutes', 'run_duration_seconds')
-
-# COMMAND ----------
-
-df = df.orderBy(col('start_date').desc(), col('start_time').desc())
-
-# COMMAND ----------
-
+#salva o dataframe em uma tabela do catalog do databricks
 df.write.mode('overwrite').saveAsTable(f"{env}.`log-table`")

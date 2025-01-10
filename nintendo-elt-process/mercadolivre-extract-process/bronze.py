@@ -2,13 +2,24 @@
 # MAGIC %md
 # MAGIC # Objetivo deste notebook
 # MAGIC
-# MAGIC  Este notebook tem como objetivo carregar e processar dados que estão em uma external location do storageaccount do azure em formato txt e com a utilização da biblioteca BeautifulSoup, que identifica os elementos dos dados extraídos em html que serão necesários para a realização do projeto, armazena-os em uma variavel para carregar os dados posteriormente em outra camada da external location em um formato json.
+# MAGIC  Este notebook tem como objetivo carregar e processar dados que estão em uma external location do storageaccount do azure em formato txt e com a utilização da biblioteca BeautifulSoup, que identifica os elementos dos dados extraídos em html que serão necesários para a realização do projeto. 
+# MAGIC
+# MAGIC 1- faz leitura do arquivo json config para obter o env em questão.
+# MAGIC
+# MAGIC 2- importa funções do repositório meus_scripts_pyspark.
+# MAGIC
+# MAGIC 3 - cria uma lista com os nomes de arquivos que estão armazenados no volume.
+# MAGIC
+# MAGIC 4 - define a data atual e identifica se existe um arquivo que contém a data atual no nome para processar apenas o arquivo mais atualizado.
+# MAGIC
+# MAGIC 5 - obtem o href no arquivo em questão para extrair informacoes do anuncio usando BeautifulSoup para elementos como titulo, preço, moeda, parcelamento e armazena os dados em uma lista que será carregada no formato json no volume camada bronze
+# MAGIC
+# MAGIC 6 - chama a função deleting_files_range_30_days para excluir arquivos com mais de 30 dias armazenados
 
 # COMMAND ----------
 
 from bs4 import BeautifulSoup
 import requests
-import re
 import json
 import os
 from datetime import datetime
@@ -65,44 +76,55 @@ currrent_files_path = next((arquivo for arquivo in file_paths if data_atual in a
 # COMMAND ----------
 
 if currrent_files_path:
+    # Inicializa uma lista vazia para armazenar os dados extraídos
+    list_todos = []
 
-    list_todos = []  # Inicializa uma lista vazia para armazenar os dados extraídos
-
+    # Lê o arquivo de texto no caminho especificado
     df = spark.read.text(currrent_files_path)
+    # Concatena o conteúdo do arquivo em uma única string
     html_content = "\n".join(row.value for row in df.collect())
 
-    sopa_bonita = BeautifulSoup(html_content, 'html.parser')  # Analisa o conteúdo HTML usando BeautifulSoup
+    # Analisa o conteúdo HTML usando BeautifulSoup
+    sopa_bonita = BeautifulSoup(html_content, 'html.parser')
 
+    # Encontra todos os elementos <h2> com a classe especificada
     list_titulo = sopa_bonita.find_all('h2', {'class': 'poly-component__title-wrapper'})
 
+    # Itera sobre cada elemento encontrado
     for i in list_titulo:
-
+        # Extrai o link do elemento <a> dentro do <h2>
         link = i.find('a')['href']
 
         # Define o cabeçalho do agente de usuário para a requisição HTTP
         headers = {'user-agent': 'Mozilla/5.0'}
 
-        # Faz uma requisição GET para a URL especificada com o número da página e cabeçalho
+        # Faz uma requisição GET para a URL especificada com o cabeçalho
         resposta = requests.get(link, headers=headers)
 
         # Analisa o conteúdo HTML da resposta usando BeautifulSoup
         sopa_bonita = BeautifulSoup(resposta.text, 'html.parser')
 
+        # Verifica se o produto está indisponível
         if sopa_bonita.find('div', class_='ui-pdp-shipping-message__text'):
             print('Este produto está indisponível')
         else:
-
+            # Extrai o título do produto
             titulo = sopa_bonita.find('h1', class_='ui-pdp-title').text
 
+            # Encontra o elemento que contém o preço
             preco = sopa_bonita.find('div', class_='ui-pdp-price__second-line')
 
+            # Extrai o valor do preço
             preco_valor = preco.find('span', {'data-testid': 'price-part'}).text
 
+            # Verifica se há desconto e extrai o valor do desconto
             desconto = preco.find('span', class_='andes-money-amount__discount')
             desconto = desconto.text if desconto else "sem desconto"
 
+            # Extrai o símbolo da moeda
             moeda = preco.find('span', class_='andes-money-amount__currency-symbol').text
 
+            # Verifica se há informações de parcelamento e extrai o texto correspondente
             if sopa_bonita.find('p', class_='ui-pdp-color--GREEN ui-pdp-size--MEDIUM ui-pdp-family--REGULAR'):
                 parcelamento = sopa_bonita.find('p', class_='ui-pdp-color--GREEN ui-pdp-size--MEDIUM ui-pdp-family--REGULAR').text
             elif sopa_bonita.find('p', class_='ui-pdp-color--BLACK ui-pdp-size--MEDIUM ui-pdp-family--REGULAR'):
@@ -110,8 +132,7 @@ if currrent_files_path:
             else:
                 parcelamento = "sem parcelamento"
 
-            titulo, preco_valor, desconto, moeda, parcelamento
-
+            # Adiciona os dados extraídos à lista
             list_todos.append({
                 'titulo': titulo,
                 'moeda': moeda,
@@ -119,14 +140,16 @@ if currrent_files_path:
                 'condition_promo': desconto,
                 'parcelado': parcelamento,
                 'link': link
-            })  # Adiciona os dados extraídos à lista
+            })
 
-    json_file_path = currrent_files_path.replace('inbound', 'bronze').replace('.txt', '.json')  # Define o caminho do arquivo JSON de saída
-    dbutils.fs.put(json_file_path, json.dumps(list_todos, ensure_ascii=False, indent=4), overwrite=True)  # Salva os dados extraídos no arquivo JSON
+    # Define o caminho do arquivo JSON de saída
+    json_file_path = currrent_files_path.replace('inbound', 'bronze').replace('.txt', '.json')
+    # Salva os dados extraídos no arquivo JSON
+    dbutils.fs.put(json_file_path, json.dumps(list_todos, ensure_ascii=False, indent=4), overwrite=True)
 
 else:
+    # Imprime uma mensagem caso não exista arquivo extraído na data atual
     print(f"Não existe arquivo extraído na data de {data_atual}")
-
 
 # COMMAND ----------
 

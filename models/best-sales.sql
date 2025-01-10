@@ -1,26 +1,29 @@
-with produtos as (
-    select
+-- Etapa 1: Criação das CTEs (Common Table Expressions)
+WITH produtos AS (
+    SELECT
         id,
         titulo,
         memoria,
         oled,
         lite
-    from {{ ref('tabela-produto') }}
+    FROM {{ ref('tabela-produto') }} -- Fonte de dados: tabela "tabela-produto"
 ),
-preco as (
-    select
+preco AS (
+    SELECT
         id,
         preco_promo
-    from {{ ref('tabela-preco') }}
+    FROM {{ ref('tabela-preco') }} -- Fonte de dados: tabela "tabela-preco"
 ),
-detalhes as (
-    select
+detalhes AS (
+    SELECT
         id,
         origem
-    from {{ ref('tabela-detalhes') }}
+    FROM {{ ref('tabela-detalhes') }} -- Fonte de dados: tabela "tabela-detalhes"
 ),
-produtos_filtrados as (
-    select
+
+-- Etapa 2: Filtragem e junção das CTEs
+produtos_filtrados AS (
+    SELECT
         produtos.id,
         produtos.titulo,
         produtos.memoria,
@@ -28,34 +31,40 @@ produtos_filtrados as (
         produtos.lite,
         preco.preco_promo,
         detalhes.origem
-    from produtos
-    join preco on produtos.id = preco.id
-    join detalhes on produtos.id = detalhes.id
-    where detalhes.origem in ('mercadolivre', 'magalu')
+    FROM produtos
+    JOIN preco ON produtos.id = preco.id
+    JOIN detalhes ON produtos.id = detalhes.id
+    WHERE detalhes.origem IN ('mercadolivre', 'magalu') -- Filtra as origens "mercadolivre" e "magalu"
 ),
-menor_preco_mercadolivre as (
-    select
-        first_value(id) over (partition by origem order by preco_promo) as id,
-        first_value(preco_promo) over (partition by origem order by preco_promo) as menor_preco,
-        'mercadolivre' as origem
-    from produtos_filtrados
-    where origem = 'mercadolivre'
-    order by preco_promo
-    limit 1
+
+-- Etapa 3: Seleção do menor preço para "mercadolivre"
+menor_preco_mercadolivre AS (
+    SELECT
+        first_value(id) OVER (partition by origem ORDER BY preco_promo) AS id,
+        first_value(preco_promo) OVER (partition by origem ORDER BY preco_promo) AS menor_preco,
+        'mercadolivre' AS origem
+    FROM produtos_filtrados
+    WHERE origem = 'mercadolivre'
+    ORDER BY preco_promo
+    LIMIT 1
 ),
-menor_preco_magalu as (
-    select
-        first_value(id) over (partition by origem order by preco_promo) as id,
-        first_value(preco_promo) over (partition by origem order by preco_promo) as menor_preco,
-        'magalu' as origem
-    from produtos_filtrados
-    where origem = 'magalu'
-    order by preco_promo
-    limit 1
+
+-- Etapa 4: Seleção do menor preço para "magalu"
+menor_preco_magalu AS (
+    SELECT
+        first_value(id) OVER (partition by origem ORDER BY preco_promo) AS id,
+        first_value(preco_promo) OVER (partition by origem ORDER BY preco_promo) AS menor_preco,
+        'magalu' AS origem
+    FROM produtos_filtrados
+    WHERE origem = 'magalu'
+    ORDER BY preco_promo
+    LIMIT 1
 )
 
-select * from menor_preco_mercadolivre
-union all
-select * from menor_preco_magalu
+-- Etapa 5: União dos resultados
+SELECT * FROM menor_preco_mercadolivre
+UNION ALL
+SELECT * FROM menor_preco_magalu
+
 
 
