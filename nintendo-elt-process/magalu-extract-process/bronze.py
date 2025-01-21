@@ -4,17 +4,13 @@
 # MAGIC
 # MAGIC  Este notebook tem como objetivo carregar e processar dados que estão em uma external location do storageaccount do azure em formato txt e com a utilização da biblioteca BeautifulSoup, que identifica os elementos dos dados extraídos em html que serão necesários para a realização do projeto. 
 # MAGIC
-# MAGIC 1- faz leitura do arquivo json config para obter o env em questão.
+# MAGIC 1- obtém o caminho do notebook para identificar palavras referente ao ambiente e define a env em questão.
 # MAGIC
-# MAGIC 2- importa funções do repositório meus_scripts_pyspark.
+# MAGIC 2 - cria uma lista com os nomes de arquivos que estão armazenados no volume.
 # MAGIC
-# MAGIC 3 - cria uma lista com os nomes de arquivos que estão armazenados no volume.
+# MAGIC 3 - define a data atual e identifica se existe um arquivo que contém a data atual no nome para processar apenas o arquivo mais atualizado.
 # MAGIC
-# MAGIC 4 - define a data atual e identifica se existe um arquivo que contém a data atual no nome para processar apenas o arquivo mais atualizado.
-# MAGIC
-# MAGIC 5 - obtem o href no arquivo em questão para extrair informacoes do anuncio usando BeautifulSoup para elementos como titulo, preço, moeda, parcelamento e armazena os dados em uma lista que será carregada no formato json no volume camada bronze
-# MAGIC
-# MAGIC 6 - chama a função deleting_files_range_30_days para excluir arquivos com mais de 30 dias armazenados
+# MAGIC 4 - obtem o href no arquivo em questão para extrair informacoes do anuncio usando BeautifulSoup para elementos como titulo, preço, moeda, parcelamento e armazena os dados em uma lista que será carregada no formato json no volume camada bronze
 
 # COMMAND ----------
 
@@ -23,35 +19,25 @@ import requests
 import json
 import os
 from datetime import datetime
-import sys
 
 # COMMAND ----------
 
-# Obtém o caminho do diretório atual
-current_dir = os.getcwd()
-
-# Ajusta o caminho do diretório para os primeiros 4 níveis
-current_dir = '/'.join(current_dir.split('/')[:4])
-
-# Define o caminho do arquivo de configuração
-config_path = f"{current_dir}/projeto_nintendo/config.json"
-
-# Abre o arquivo de configuração e carrega seu conteúdo em um dicionário
-with open(config_path, "r") as f:
-    config = json.load(f)
-
-# Obtém o valor da chave "env" do dicionário de configuração
-env = config["env"]
+# Obtém o caminho do diretório atual do notebook
+current_path = os.path.dirname(dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get())
 
 # COMMAND ----------
 
-# Adiciona o caminho do diretório 'meus_scripts_pyspark' ao sys.path
-# Isso permite que módulos Python localizados nesse diretório sejam importados
-sys.path.append(f'{current_dir}/meus_scripts_pyspark')
-
-# COMMAND ----------
-
-from deleting_files_range_30_days import deleting_files_range_30
+# Verifica se o caminho atual contém a string "dev"
+if "dev" in current_path:
+    # Define o ambiente como "dev"
+    env = "dev"
+# Verifica se o caminho atual contém a string "prd"
+elif "prd" in current_path:
+    # Define o ambiente como "prd"
+    env = "prd"
+# Caso contrário, define o ambiente como "env não encontrado"
+else:
+    env = "env não encontrado"
 
 # COMMAND ----------
 
@@ -72,6 +58,10 @@ data_atual = datetime.now().strftime("%Y-%m-%d")
 
 # Filtrando a lista com a data_atual 
 currrent_files_path = next((arquivo for arquivo in file_paths if data_atual in arquivo), None)
+
+# COMMAND ----------
+
+currrent_files_path
 
 # COMMAND ----------
 
@@ -99,7 +89,8 @@ if currrent_files_path:  # Verifica se há um caminho de arquivo atual
 
         titulo = sopa_bonita.find('h1', {'data-testid': 'heading-product-title'}).text  # Extrai o título do produto
 
-        preco = sopa_bonita.find('p', {'data-testid': 'price-value'}).text  # Extrai o preço do produto
+        preco = sopa_bonita.find('p', {'data-testid': 'price-value'}) # Extrai o preço do produto
+        preco = preco.text if preco else "R$ 0,00" # Se não encontrado texto no elemento, retorne R$0,00
 
         desconto = "sem desconto"  # Define o valor padrão para desconto
 
@@ -124,16 +115,11 @@ if currrent_files_path:  # Verifica se há um caminho de arquivo atual
             'link': link
         })
 
-    json_file_path = currrent_files_path.replace('inbound', 'bronze').replace('.txt', '.json')  # Define o caminho do arquivo JSON de saída
-    dbutils.fs.put(json_file_path, json.dumps(list_todos, ensure_ascii=False, indent=4), overwrite=True)  # Salva os dados extraídos no arquivo JSON
-
 else:
-    print(f"Não existe arquivo extraído na data de {data_atual}")  # Imprime uma mensagem se não houver arquivo atual
+    # Imprime uma mensagem caso não exista arquivo extraído na data atual
+    print(f"Não existe arquivo extraído na data de {data_atual}")
 
 # COMMAND ----------
 
-#deletando arquivos que já possuem um tempo de armazenamento maior que 30 dias
-
-path = f"/Volumes/nintendo_databricks/{env}/magalu-vol/bronze"
-
-deleting_files_range_30(path)
+json_file_path = currrent_files_path.replace('inbound', 'bronze').replace('.txt', '.json')  # Define o caminho do arquivo JSON de saída
+dbutils.fs.put(json_file_path, json.dumps(list_todos, ensure_ascii=False, indent=4), overwrite=True)  # Salva os dados extraídos no arquivo JSON
