@@ -4,7 +4,7 @@
 # MAGIC
 # MAGIC Este notebook tem como objetivo realizar a extração de dados relacionados ao projeto Nintendo. Utilizando bibliotecas como `requests` e `BeautifulSoup`.
 # MAGIC
-# MAGIC 1- faz leitura do arquivo json config para obter o env em questão.
+# MAGIC 1- obtém o caminho do notebook para identificar palavras referente ao ambiente e define a env em questão.
 # MAGIC
 # MAGIC 2- importa funções do repositório meus_scripts_pyspark.
 # MAGIC
@@ -25,31 +25,34 @@ import sys
 
 # COMMAND ----------
 
-# Obtém o caminho do diretório atual
-current_dir = os.getcwd()
+# Obtém o caminho do diretório atual do notebook
+current_path = os.path.dirname(dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get())
 
-# Ajusta o caminho do diretório para os primeiros 4 níveis
-current_dir = '/'.join(current_dir.split('/')[:4])
+# COMMAND ----------
 
-# Define o caminho do arquivo de configuração
-config_path = f"{current_dir}/projeto_nintendo/config.json"
-
-# Abre o arquivo de configuração e carrega seu conteúdo em um dicionário
-with open(config_path, "r") as f:
-    config = json.load(f)
-
-# Obtém o valor da chave "env" do dicionário de configuração
-env = config["env"]
+# Verifica se o caminho atual contém a string "dev"
+if "dev" in current_path:
+    # Define o ambiente como "dev"
+    env = "dev"
+# Verifica se o caminho atual contém a string "prd"
+elif "prd" in current_path:
+    # Define o ambiente como "prd"
+    env = "prd"
+# Caso contrário, define o ambiente como "env não encontrado"
+else:
+    env = "env não encontrado"
 
 # COMMAND ----------
 
 # Adiciona o caminho do diretório 'meus_scripts_pyspark' ao sys.path
 # Isso permite que módulos Python localizados nesse diretório sejam importados
-sys.path.append(f'{current_dir}/meus_scripts_pyspark')
+# Ajusta o caminho do diretório para os primeiros 3 níveis
+current_dir = '/'.join(current_path.split('/')[:3])
+
+sys.path.append(f'/Workspace{current_dir}/meus_scripts_pyspark')
 
 # COMMAND ----------
 
-from deleting_files_range_30_days import deleting_files_range_30
 from req_bsoup import req_bsoup
 
 # COMMAND ----------
@@ -68,11 +71,3 @@ file_path = f'/Volumes/nintendo_databricks/{env}/magalu-vol/inbound/{current_dat
 
 # Escreve o conteúdo da página no arquivo usando dbutils.fs.put
 dbutils.fs.put(file_path, page_content, overwrite=True)
-
-# COMMAND ----------
-
-#deletando arquivos que já possuem um tempo de armazenamento maior que 30 dias
-
-path = f"/Volumes/nintendo_databricks/{env}/magalu-vol/inbound"
-
-deleting_files_range_30(path)

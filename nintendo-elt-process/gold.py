@@ -4,15 +4,19 @@
 # MAGIC
 # MAGIC O objetivo deste notebook é carregar os dados do projeto Nintendo em uma extarnal table onde apenas será registrado novos registro a tabela. 
 # MAGIC
-# MAGIC 1 - faz leitura do arquivo json config para obter o env em questão.
+# MAGIC 1 - faz leitura do arquivo json config para obter o nome da storageaccount em questão.
 # MAGIC
-# MAGIC 2 - importa funções do repositório meus_scripts_pyspark.
+# MAGIC 2 - obtém o caminho do notebook para identificar palavras referente ao ambiente e define a env em questão.
 # MAGIC
-# MAGIC 3 - Executa uma função sql que cria a external table com a location delta table e partition by file_date, caso a tabela não exista.
+# MAGIC 3 - importa funções do repositório meus_scripts_pyspark.
 # MAGIC
-# MAGIC 4 - chama a função que identifica novos registro, caso a tabela não exista, o dataframe silver é inserido a external table.
+# MAGIC 4 - Executa uma função sql que cria a external table com a location delta table e partition by file_date, caso a tabela não exista.
 # MAGIC
-# MAGIC 5 - carrega o dataframe de novos registro na external table
+# MAGIC 5 - chama a função que identifica novos registro, caso a tabela não exista, o dataframe silver é inserido a external table.
+# MAGIC
+# MAGIC 6 - carrega o dataframe de novos registro na external table
+# MAGIC
+# MAGIC 7 - Altera para inativo os valores de cada registro distinto da coluna link se seu file_date não for a data mais recente.
 
 # COMMAND ----------
 
@@ -22,22 +26,36 @@ import sys
 
 # COMMAND ----------
 
-# Obtém o caminho do diretório atual
-current_dir = os.getcwd()
+# Obtém o caminho do diretório atual do notebook
+current_path = os.path.dirname(dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get())
 
-# Ajusta o caminho do diretório para os primeiros 4 níveis
-current_dir = '/'.join(current_dir.split('/')[:4])
+# COMMAND ----------
+
+current_dir = '/'.join(current_path.split('/')[:4])
 
 # Define o caminho do arquivo de configuração
-config_path = f"{current_dir}/projeto_nintendo/config.json"
+config_path = f"/Workspace{current_dir}/config.json"
 
 # Abre o arquivo de configuração e carrega seu conteúdo em um dicionário
 with open(config_path, "r") as f:
     config = json.load(f)
 
 # Obtém o valor da chave "env" do dicionário de configuração
-env = config["env"]
 storage = config["storage"]
+
+# COMMAND ----------
+
+# Verifica se o caminho atual contém a string "dev"
+if "dev" in current_path:
+    # Define o ambiente como "dev"
+    env = "dev"
+# Verifica se o caminho atual contém a string "prd"
+elif "prd" in current_path:
+    # Define o ambiente como "prd"
+    env = "prd"
+# Caso contrário, define o ambiente como "env não encontrado"
+else:
+    env = "env não encontrado"
 
 # COMMAND ----------
 
@@ -77,8 +95,10 @@ spark.sql(query)
 
 # Adiciona o caminho do diretório 'meus_scripts_pyspark' ao sys.path
 # Isso permite que módulos Python localizados nesse diretório sejam importados
-# Diretorio referente a funções de pyspark
-sys.path.append(f'{current_dir}/meus_scripts_pyspark')
+# Ajusta o caminho do diretório para os primeiros 3 níveis
+current_dir = '/'.join(current_path.split('/')[:3])
+
+sys.path.append(f'/Workspace{current_dir}/meus_scripts_pyspark')
 
 # COMMAND ----------
 
@@ -119,3 +139,25 @@ novos_registros.write \
   .option("overwriteSchema", "true") \
   .partitionBy("file_date") \
   .save(f"abfss://{env}@{storage}.dfs.core.windows.net/gold")
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC
+# MAGIC -- Cria uma tabela temporária com o link e a data mais recente do arquivo
+# MAGIC WITH LatestTable AS (
+# MAGIC   SELECT link, MAX(file_date) AS latest_file_date
+# MAGIC   FROM nintendo_databricks.dev.`nintendo-bigtable`
+# MAGIC   GROUP BY link
+# MAGIC )
+# MAGIC
+# MAGIC -- Realiza um merge na tabela principal para atualizar o status dos registros
+# MAGIC MERGE INTO nintendo_databricks.dev.`nintendo-bigtable` AS nbt
+# MAGIC USING LatestTable AS lt
+# MAGIC ON nbt.link = lt.link
+# MAGIC WHEN MATCHED THEN
+# MAGIC   -- Atualiza o status para 'ativo' se a data do arquivo for a mais recente, caso contrário, 'inativo'
+# MAGIC   UPDATE SET nbt.status = CASE 
+# MAGIC                             WHEN lt.latest_file_date = nbt.file_date THEN 'ativo'
+# MAGIC                             ELSE 'inativo'
+# MAGIC                           END
