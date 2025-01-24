@@ -74,7 +74,7 @@ if currrent_files_path:
     sopa_bonita = BeautifulSoup(html_content, 'html.parser')
 
     # Encontra todos os elementos <h2> com a classe especificada
-    list_titulo = sopa_bonita.find_all('a', {'class': 'poly-component__title'})
+    list_titulo = sopa_bonita.find_all('h3', {'class': 'poly-component__title-wrapper'})
 
     # Itera sobre cada elemento encontrado
     for i in list_titulo:

@@ -59,7 +59,7 @@ from req_bsoup import req_bsoup
 current_date = datetime.datetime.now().strftime("%Y-%m-%d")
 
 # define a url para scrapy
-url = "https://lista.mercadolivre.com.br/nintendo-sitwitch"
+url = "https://lista.mercadolivre.com.br/nintendo-switch"
 
 # chama a função para extração de dados brutos da url
 page_content = req_bsoup(url)
