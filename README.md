@@ -43,12 +43,14 @@ Os scripts são versionados e separados por ambientes de desenvolvimento (dev) e
 ![lineage-dbt](https://github.com/user-attachments/assets/ebe099b3-0a17-4a2d-a6ec-f757f5899d3c)
 
 6. **Monitoramento e Notificação**:
-    - **Objetivo**: Automatizar todo o processo via workflows, gerando log do processo para criação de um dashboard de monitoramento e notificações de falhas ou tempo limite por e-mail.
+    - **Objetivo**: Automatizar todo o processo via workflows, gerando log do processo e monitoramento de lineage tables para criação de um dashboard de monitoramento e notificações de falhas e/ou tempo limite por e-mail.
     - **Benefício**: Aumenta a eficiência operacional e permite resposta rápida a problemas.
 
 ![dashboard-monitoramento](https://github.com/user-attachments/assets/99bb03ff-c23f-4215-936b-54ad73388899)
 
-![pipeline-databricks](https://github.com/user-attachments/assets/93406bfd-c9ff-4ef1-a73d-fd4ef107ed01)
+![Image](https://github.com/user-attachments/assets/98165ea3-e252-462a-8e15-7620cc1dee93)
+
+![Image](https://github.com/user-attachments/assets/93fa08db-d369-40c1-9c37-2321646efdcb)
 
 ![execucoes-job](https://github.com/user-attachments/assets/0eba13a8-e0cb-43a6-b577-18f7f0b3eb3d)
 
@@ -101,14 +103,43 @@ Com o Azure Databricks criado sem nenhuma particularidade específica, basta ace
 
 ![volume-databricks](https://github.com/user-attachments/assets/455722a8-8466-4e08-9e8c-6f86377bd2e7)
 
-### 3.Criação de um Acess Conector
+### 4.Liberação de System Tables
+
+- Verifique se o seu usuário está como adimin do workspace do databricks
+Para fazer isso, basta acessar o Microsfot Entry ID e ir em Funções e Administradores para verificar se seu usuário possui a função de Adminsitrador Global
+
+![Image](https://github.com/user-attachments/assets/21ca8d5a-c4b3-4e78-bbfa-be9b7bb96a9f)
+
+- Caso não esteja siga os passos abaixos para atribuir seu usuario como admin
+Ao criar uma conta na Azure, é criado um email corporativo default, voce consegue obter esse e-mail acessando o Microsfot Entry ID em Usário
+
+![Image](https://github.com/user-attachments/assets/993b5437-9d5a-4a65-8bb2-2a894e7f86f4)
+
+Acesse o link https://accounts.azuredatabricks.net/ e atribua o seu email pessoal como admin global do databricks
+
+![Image](https://github.com/user-attachments/assets/e82232ca-eddb-4a59-b8a7-1e6ca4a41d28)
+
+- Execute o codigo, em um notebook do databricks, abaixo para verificar as system tables que estão disponiveis para adquirir ao catalogo
+
+`curl -X GET https://<sua instance id>.azuredatabricks.net/api/2.0/unity-catalog/metastores/<seu metastore id>/systemschemas \
+  -H "Authorization: Bearer <seu token>"`
+
+- Execute o codigo, em um notebook do databricks, abaixo para anexar a tabela ao catalogo
+
+`curl -v -X PUT -H "Authorization: Bearer <seu token>" "https://<sua instance id>.azuredatabricks.net/api/2.0/unity-catalog/metastores/<seu metastore id>/systemschemas/<nome da tabela>"`
+
+- Caso ainda precise de ajuda, a documentação abaixo pode te instruir:
+
+https://learn.microsoft.com/en-us/azure/databricks/data-governance/unity-catalog/manage-privileges/admin-privileges#assign-metastore-admin
+
+### 5.Criação de um Acess Conector
 
 - Crie um Acess Conector com a mesma região e grupo de recurso do projeto.
 - Atribua a função de Colaborador de Dados do Storage Blob ao acess conector.
 - Criação de uma credencial externa no workspace do azure databricks.
 - Criação de dois external location para os container dev e prd (necessário para a criação da external table e leituras e gravações de dados).
   
-### 5.Conexão entre dbt e databricks
+### 6.Conexão entre dbt e databricks
 
 - Com a conta no dbt criada, crie seu projeto.
 - Conecte o Databricks ao dbt utilizando as informações do cluster: o host, o caminho HTTP (http path) e a porta, que geralmente é a 443.
@@ -117,7 +148,7 @@ Com o Azure Databricks criado sem nenhuma particularidade específica, basta ace
 
 ![dbt-conection](https://github.com/user-attachments/assets/9c22d837-4467-4c0c-bf3b-8e13acd3c683)
 
-### 6.Workflow Databricks
+### 7.Workflow Databricks
 
 - Crie dois workflows: um com a tag hml, que se refere ao fluxo de teste, e outro com a tag prd, que será o fluxo de produção.
   
@@ -135,7 +166,7 @@ Com o Azure Databricks criado sem nenhuma particularidade específica, basta ace
 
 ![details-workflow](https://github.com/user-attachments/assets/2a2586db-50fd-4b68-aaaf-ac0f9e7422fe)
 
-### 7.Dashboard Monitoramento via Databricks
+### 8.Dashboard Monitoramento via Databricks
 
 - Crie um painel com as fontes de dados da tabela log-table em ambos os schemas.
 
@@ -144,4 +175,8 @@ Ao fim do pipeline é gerado uma tabela de log do workflow para cada ambiente, s
 Basta unir as duas tabelas para gerar uma visão de logs em ambos ambientes.
 
 ![fonte-dados-painel](https://github.com/user-attachments/assets/db5f2d29-086c-4ef1-9e49-58546d1996d9)
+
+- Crie um painel com as fontes de dados da tabela lineage-tables-monitoring em ambos os schemas e inclua uma coluna de contagem para criação de insights no painel do dashbaord.
+
+![Image](https://github.com/user-attachments/assets/f9c9c445-44ef-4acc-9277-26de13890d1a)
   
