@@ -139,5 +139,9 @@ Com o Azure Databricks criado sem nenhuma particularidade específica, basta ace
 
 - Crie um painel com as fontes de dados da tabela log-table em ambos os schemas.
 
+Ao fim do pipeline é gerado uma tabela de log do workflow para cada ambiente, sendo dev e prd, a partir da extração de daods utilziando a API do Databricks.
+
+Basta unir as duas tabelas para gerar uma visão de logs em ambos ambientes.
+
 ![fonte-dados-painel](https://github.com/user-attachments/assets/db5f2d29-086c-4ef1-9e49-58546d1996d9)
   

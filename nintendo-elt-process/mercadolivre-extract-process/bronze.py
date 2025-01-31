@@ -98,10 +98,14 @@ if currrent_files_path:
             titulo = sopa_bonita.find('h1', class_='ui-pdp-title').text
 
             # Encontra o elemento que contém o preço
-            preco = sopa_bonita.find('div', class_='ui-pdp-price__second-line')
+            if sopa_bonita.find('div', class_='ui-pdp-price__second-line'):
+                preco = sopa_bonita.find('div', class_='ui-pdp-price__second-line')
 
-            # Extrai o valor do preço
-            preco_valor = preco.find('span', {'data-testid': 'price-part'}).text
+                # Extrai o valor do preço
+                preco_valor = preco.find('span', {'data-testid': 'price-part'}).text
+            
+            else:
+                preco_valor = "preço não encontrado"
 
             # Verifica se há desconto e extrai o valor do desconto
             desconto = preco.find('span', class_='andes-money-amount__discount')
