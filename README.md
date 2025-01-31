@@ -66,6 +66,12 @@ Os scripts são versionados e separados por ambientes de desenvolvimento (dev) e
 
   ![storage-container](https://github.com/user-attachments/assets/c064337e-660e-4664-b34f-f2f2ccbbb99f)
 
+- Em gerenciamento do ciclo de vida dos blobs, foi configurado um limite de vida de 30 dias para arquivos que estão an stage inbound e bronze para que não tenhamos uma grande quantidade de arquivos salvos na conta de armazenamento já que os registros são armazenados em external tables do catalog do databricks.
+
+OBS: O clico de vida de 30 dias de arquivos em stage inbound e bronze serve também para uma margem de segurança em casos de alterações de elementos do html extraidos para interação com o BeautifulSoup.
+
+  ![Image](https://github.com/user-attachments/assets/6d89a267-6f16-4940-abea-aed50aad7ef7)
+
 ### 2.Criação do Azure Databricks
 
 Com o Azure Databricks criado sem nenhuma particularidade específica, basta acessar o workspace para realizar as configurações locais:
