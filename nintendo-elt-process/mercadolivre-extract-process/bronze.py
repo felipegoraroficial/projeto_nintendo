@@ -10,13 +10,13 @@
 # MAGIC
 # MAGIC 3 - define a data atual e identifica se existe um arquivo que contém a data atual no nome para processar apenas o arquivo mais atualizado.
 # MAGIC
-# MAGIC 4 - obtem o href no arquivo em questão para extrair informacoes do anuncio usando BeautifulSoup para elementos como titulo, preço, moeda, parcelamento e armazena os dados em uma lista que será carregada no formato json no volume camada bronze
+# MAGIC 4 - obtem o href no arquivo em questão para extrair informacoes do anuncio usando BeautifulSoup para elementos como titulo, preço, moeda, parcelamento e armazena os dados em uma lista que será carregada no formato parquet no volume camada bronze
 
 # COMMAND ----------
 
 from bs4 import BeautifulSoup
 import requests
-import json
+import sys
 import os
 from datetime import datetime
 
@@ -38,6 +38,19 @@ elif "prd" in current_path:
 # Caso contrário, define o ambiente como "env não encontrado"
 else:
     env = "env não encontrado"
+
+# COMMAND ----------
+
+# Adiciona o caminho do diretório 'meus_scripts_pyspark' ao sys.path
+# Isso permite que módulos Python localizados nesse diretório sejam importados
+# Ajusta o caminho do diretório para os primeiros 3 níveis
+current_dir = '/'.join(current_path.split('/')[:3])
+
+sys.path.append(f'/Workspace{current_dir}/meus_scripts_pyspark')
+
+# COMMAND ----------
+
+from create_unique_file import create_unique_file
 
 # COMMAND ----------
 
@@ -138,5 +151,20 @@ else:
 
 # COMMAND ----------
 
-json_file_path = currrent_files_path.replace('inbound', 'bronze').replace('.txt', '.json')  # Define o caminho do arquivo JSON de saída
-dbutils.fs.put(json_file_path, json.dumps(list_todos, ensure_ascii=False, indent=4), overwrite=True)  # Salva os dados extraídos no arquivo JSON
+# Cria um RDD a partir da lista de dicionários
+rdd = spark.sparkContext.parallelize(list_todos)
+
+# Converte o RDD em um DataFrame
+df = rdd.toDF()
+
+# COMMAND ----------
+
+# Caminho para a external location do diretório bronze
+bronze_path = currrent_files_path.replace('inbound', 'bronze').replace('.txt', '')
+
+# Salva o DataFrame Spark no arquivo Parquet
+df.write.mode('overwrite').parquet(bronze_path)
+
+# COMMAND ----------
+
+create_unique_file(bronze_path, 'parquet')
