@@ -94,8 +94,8 @@ schema = StructType([
 # Caminho para a external location do diretório bronze em magalu
 bronze_path = f'/Volumes/nintendo_databricks/{env}/magalu-vol/bronze/'
 
-# Lendo arquivos JSON do diretório bronze com a opção de multiline ativada
-mg = spark.read.option("multiline", "true").json(bronze_path)
+# Lendo arquivos PARQUET do diretório bronze
+mg = spark.read.parquet(bronze_path)
 
 mg = process_data_to_bronze(mg,'link')
 
@@ -108,8 +108,8 @@ df_not_empty(mg)
 # Caminho para a external location do diretório bronze em mercadolivre
 bronze_path = f'/Volumes/nintendo_databricks/{env}/mercadolivre-vol/bronze/'
 
-# Lendo arquivos JSON do diretório bronze com a opção de multiline ativada
-ml = spark.read.option("multiline", "true").json(bronze_path)
+# Lendo arquivos PARQUET do diretório bronze
+ml = spark.read.parquet(bronze_path)
 
 ml = process_data_to_bronze(ml,'link')
 
