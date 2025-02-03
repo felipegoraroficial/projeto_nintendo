@@ -74,10 +74,6 @@ currrent_files_path = next((arquivo for arquivo in file_paths if data_atual in a
 
 # COMMAND ----------
 
-currrent_files_path
-
-# COMMAND ----------
-
 if currrent_files_path:  # Verifica se há um caminho de arquivo atual
 
     list_todos = []  # Inicializa uma lista vazia para armazenar os dados extraídos
@@ -100,6 +96,8 @@ if currrent_files_path:  # Verifica se há um caminho de arquivo atual
 
         sopa_bonita = BeautifulSoup(resposta.text, 'html.parser')  # Analisa o conteúdo HTML da resposta usando BeautifulSoup
 
+        codigo = sopa_bonita.find('span', class_='sc-dcJsrY daMqkh').text  # Extrai o codigo do produto
+
         titulo = sopa_bonita.find('h1', {'data-testid': 'heading-product-title'}).text  # Extrai o título do produto
 
         preco = sopa_bonita.find('p', {'data-testid': 'price-value'}) # Extrai o preço do produto
@@ -120,6 +118,7 @@ if currrent_files_path:  # Verifica se há um caminho de arquivo atual
             parcelamento = "sem parcelamento"  # Define o valor padrão para parcelamento
 
         list_todos.append({  # Adiciona os dados extraídos à lista
+            'codigo': codigo,
             'titulo': titulo,
             'moeda': moeda,
             'preco_promo': preco,
