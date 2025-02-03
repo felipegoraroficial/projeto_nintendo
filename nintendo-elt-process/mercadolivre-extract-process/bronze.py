@@ -19,6 +19,7 @@ import requests
 import sys
 import os
 from datetime import datetime
+import re
 
 # COMMAND ----------
 
@@ -94,6 +95,16 @@ if currrent_files_path:
         # Extrai o link do elemento <a> dentro do <h2>
         link = i.find('a')['href']
 
+        match = re.search(r'MLB-(\d+)-', link)
+        if not match:
+            match = re.search(r'MLB(\d+)', link)
+        
+        if match:
+            codigo = match.group(1)
+
+        else:
+            codigo = 'não encontrado'
+
         # Define o cabeçalho do agente de usuário para a requisição HTTP
         headers = {'user-agent': 'Mozilla/5.0'}
 
@@ -137,6 +148,7 @@ if currrent_files_path:
 
             # Adiciona os dados extraídos à lista
             list_todos.append({
+                'codigo': codigo,
                 'titulo': titulo,
                 'moeda': moeda,
                 'preco_promo': preco_valor,

@@ -78,6 +78,7 @@ from schema_equals_df_schema import schema_equals_df_schema
 
 # Definindo o esquema para o DataFrame
 schema = StructType([
+    StructField("id", StringType(), True),              # ID do produto
     StructField("titulo", StringType(), True),          # Título do produto
     StructField("moeda", StringType(), True),           # Moeda utilizada na transação
     StructField("condition_promo", StringType(), True), # Condição promocional do produto
@@ -97,7 +98,7 @@ bronze_path = f'/Volumes/nintendo_databricks/{env}/magalu-vol/bronze/'
 # Lendo arquivos PARQUET do diretório bronze
 mg = spark.read.parquet(bronze_path)
 
-mg = process_data_to_bronze(mg,'link')
+mg = process_data_to_bronze(mg,'codigo')
 
 # COMMAND ----------
 
@@ -111,7 +112,7 @@ bronze_path = f'/Volumes/nintendo_databricks/{env}/mercadolivre-vol/bronze/'
 # Lendo arquivos PARQUET do diretório bronze
 ml = spark.read.parquet(bronze_path)
 
-ml = process_data_to_bronze(ml,'link')
+ml = process_data_to_bronze(ml,'codigo')
 
 # COMMAND ----------
 
@@ -124,7 +125,7 @@ df = union_df(ml, mg)
 # COMMAND ----------
 
 # Seleciona as colunas específicas do DataFrame para manter no resultado final
-df = df.select('titulo', 'moeda', 'condition_promo', 'preco_promo', 'parcelado', 'link', 'file_name', 'file_date', 'status')
+df = df.select('codigo','titulo', 'moeda', 'condition_promo', 'preco_promo', 'parcelado', 'link', 'file_name', 'file_date', 'status')
 
 # COMMAND ----------
 
@@ -134,6 +135,7 @@ df = type_monetary(df, "preco_promo")
 
 df = replace_characters(df, "condition_promo", r"[()]", "")
 df = replace_characters(df, "condition_promo", "de desconto no pix", "OFF")
+df = replace_characters(df, "codigo", "Código ", "")
 
 # COMMAND ----------
 
