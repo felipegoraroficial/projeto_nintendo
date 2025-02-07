@@ -6,11 +6,11 @@ O projeto foi desenvolvido utilizando as linguagens de programação Python e Py
 
 A arquitetura do projeto envolve recursos da Azure integrados ao dbt Cloud. Usando o Databricks como plataforma do processo de ELT, os dados extraídos da web são armazenados em um diretório inbound dentro de um contêiner da conta de armazenamento da Azure com a data de extração. Utilizamos o BeautifulSoup para identificar elementos e carregar informações na stage bronze. Com PySpark, carregamos todos os dados da stage bronze e passamos por uma limpeza e transformação de dados até o carregamento dos dados tratados em uma stage silver. Por fim, os dados são processados e carregados em uma tabela externa que está particionada pela data de extração.
 
-No dbt, é feita a conexão do catálogo do Databricks e são criadas views de normalização de dados e métricas para análise de dados.
+No dbt, é feita a conexão do catálogo do Databricks e são criadas tables de normalização de dados e views de métricas para análise de dados.
 
-Todo o processo ocorre no workflow do Databricks de forma agendada, com alertas enviados por e-mail em caso de tempo de processo ou falha.
+Todo o processo ocorre no workflow do Databricks de forma agendada, com alertas enviados por e-mail em caso de tempo de processo ultrapassar o limite estimado ou falha.
 
-No final do processo do pipeline é gerado um log do workflow e armazenado em uma tabela do databricks que serve de fonte de dados ao dashboard de monitoramento do pipeline.
+No final do workflow é gerado dados referente a log do processo e lienage de tabelas que são armazenado em uma tabela no catalogo do databricks que servirão de fonte de dados ao dashboard de monitoramento do workspace.
 
 Os scripts são versionados e separados por ambientes de desenvolvimento (dev) e produção (prd).
 
