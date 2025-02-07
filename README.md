@@ -6,53 +6,41 @@ O projeto foi desenvolvido utilizando as linguagens de programação Python e Py
 
 A arquitetura do projeto envolve recursos da Azure integrados ao dbt Cloud. Usando o Databricks como plataforma do processo de ELT, os dados extraídos da web são armazenados em um diretório inbound dentro de um contêiner da conta de armazenamento da Azure com a data de extração. Utilizamos o BeautifulSoup para identificar elementos e carregar informações na stage bronze. Com PySpark, carregamos todos os dados da stage bronze e passamos por uma limpeza e transformação de dados até o carregamento dos dados tratados em uma stage silver. Por fim, os dados são processados e carregados em uma tabela externa que está particionada pela data de extração.
 
-No dbt, é feita a conexão do catálogo do Databricks e são criadas views de normalização de dados e métricas para análise de dados.
+No dbt, é feita a conexão do catálogo do Databricks e são criadas tables de normalização de dados e views de métricas para análise de dados.
 
-Todo o processo ocorre no workflow do Databricks de forma agendada, com alertas enviados por e-mail em caso de tempo de processo ou falha.
+Todo o processo ocorre no workflow do Databricks de forma agendada, com alertas enviados por e-mail em caso de tempo de processo ultrapassar o limite estimado ou falha.
 
-No final do processo do pipeline é gerado um log do workflow e armazenado em uma tabela do databricks que serve de fonte de dados ao dashboard de monitoramento do pipeline.
+No final do workflow é gerado dados referente a log do processo e lienage de tabelas que são armazenado em uma tabela no catalogo do databricks que servirão de fonte de dados ao dashboard de monitoramento do workspace.
 
 Os scripts são versionados e separados por ambientes de desenvolvimento (dev) e produção (prd).
 
 ![arquitetura-projeto-nintendo](https://github.com/user-attachments/assets/7e06bcbe-da5e-42a4-a9d2-bf7abaf7a238)
 
-## Objetivo:
+## Meta:
 
 1. **Captação e Armazenamento de Dados Brutos**:
     - **Objetivo**: Capturar dados brutos diários de sites de e-commerce e marketplaces para análise posterior.
     - **Benefício**: Permite a reprocessamento dos dados caso os sites mudem, preservando a integridade dos dados históricos.
 
-2. **Processamento de Dados com BeautifulSoup**:
+2. **Captação e Armazenamento de Elemento HTML**:
     - **Objetivo**: Extrair informações essenciais dos arquivos HTML, como links, títulos, preços, promoções, parcelamentos e imagens dos produtos.
     - **Benefício**: Flexibilidade para ajustar o processamento conforme necessário, sem a perda de dados brutos.
 
-3. **Integração e Limpeza de Dados com PySpark**:
-    - **Objetivo**: Unificar os dados extraídos em um único dataframe e realizar a limpeza e tratamento dos mesmos.
-    - **Benefício**: Melhoria da qualidade dos dados, com correção de valores nulos e extração de informações adicionais dos títulos dos anúncios. Além disso, por se tratar de Spark, os dados são escalonáveis, suportando big data.
+3. **Processamento e Escalabilidade para BigData**:
+    - **Objetivo**: Aplicar processamento Spark ao conjuntos de dados na etapa de transformação.
+    - **Benefício**: Melhoria da qualidade dos dados, com correção de dados e padronização do mesmo e, além disso, o processamento de dados escalonáveis e suportando big data.
 
 4. **Armazenamento Seguro dos Dados**:
     - **Objetivo**: Armazenar dados tratados em uma external table no Databricks, garantindo a segurança e integridade dos dados.
-    - **Benefício**: Proteção dos dados em armazenamento externo, prevenindo perdas devido à exclusão de tabelas no Databricks.
+    - **Benefício**: Proteção dos dados em armazenamento externo, prevenindo perdas ou alterações equivocadas no dado.
 
-![external-table-databricks](https://github.com/user-attachments/assets/87fa2d19-d802-4f03-befc-940b321fbc24)
+5. **Separação de Plataforma entre Times**:
+    - **Objetivo**: Separação de processos entre engenheiros de dados (Plataforma Databricks) e analistas dados (Plataforma dbt).
+    - **Benefício**: Ganho em foco e agilidade no processo, segurança em carga de trabalho e governança sobre a plataforma
 
-5. **Normalização e Análise de Dados com DBT**:
-    - **Objetivo**: Normalizar os dados em views e métricas para facilitar análises de dados.
-    - **Benefício**: Separação de funções entre engenheiros de dados e analistas, aumentando a segurança e eficiência do processo.
-
-![lineage-dbt](https://github.com/user-attachments/assets/ebe099b3-0a17-4a2d-a6ec-f757f5899d3c)
-
-6. **Monitoramento e Notificação**:
-    - **Objetivo**: Automatizar todo o processo via workflows, gerando log do processo e monitoramento de lineage tables para criação de um dashboard de monitoramento e notificações de falhas e/ou tempo limite por e-mail.
-    - **Benefício**: Aumenta a eficiência operacional e permite resposta rápida a problemas.
-
-![dashboard-monitoramento](https://github.com/user-attachments/assets/99bb03ff-c23f-4215-936b-54ad73388899)
-
-![Image](https://github.com/user-attachments/assets/98165ea3-e252-462a-8e15-7620cc1dee93)
-
-![Image](https://github.com/user-attachments/assets/93fa08db-d369-40c1-9c37-2321646efdcb)
-
-![execucoes-job](https://github.com/user-attachments/assets/0eba13a8-e0cb-43a6-b577-18f7f0b3eb3d)
+6. **Monitoramento de Processo**:
+    - **Objetivo**: Integrar ambas plataforma em um unico pipeline de dados.
+    - **Benefício**: Monitoramento e velocidade na interpretação de incidente para atuar em correções e/ou manutenções.
 
 ## Etapas do projeto:
 
@@ -99,6 +87,9 @@ Com o Azure Databricks criado sem nenhuma particularidade específica, basta ace
   
 - Criação de uma credencial externa no cálogo.
 - Criação de duas external location para os container dev e prd (necessário para a criação da external table e volumes).
+
+![external-table-databricks](https://github.com/user-attachments/assets/87fa2d19-d802-4f03-befc-940b321fbc24)
+
 - Criação de volumes, em ambos schmas dev e prd, e para cada hierarquia medalhão mencionada na etapa acima.
 
 ![volume-databricks](https://github.com/user-attachments/assets/455722a8-8466-4e08-9e8c-6f86377bd2e7)
@@ -143,10 +134,15 @@ https://learn.microsoft.com/en-us/azure/databricks/data-governance/unity-catalog
 
 - Com a conta no dbt criada, crie seu projeto.
 - Conecte o Databricks ao dbt utilizando as informações do cluster: o host, o caminho HTTP (http path) e a porta, que geralmente é a 443.
-- Conecte o GitHub ao dbt com um token de uso pessoal.
-- Com as conexões realizadas, crie dois arquivos YML para os schemas dev e prd, que serão as fontes de busca para trabalhar com os dados no Databricks.
 
 ![dbt-conection](https://github.com/user-attachments/assets/9c22d837-4467-4c0c-bf3b-8e13acd3c683)
+
+- Conecte o GitHub ao dbt com um token de uso pessoal.
+- Use este link para clonar o repositório do projeto dbt: https://github.com/felipegoraroficial/dbt_project
+- Com as conexões realizadas, crie um arquivos YML para os schemas dev e prd em cada branch, que serão as fontes de busca para trabalhar com os dados no Databricks de forma separada por ambiente.
+- Ao final, teremos um pipeline de dado no dbt igual o da imagem abaixo
+
+![lineage-dbt](https://github.com/user-attachments/assets/ebe099b3-0a17-4a2d-a6ec-f757f5899d3c)
 
 ### 7.Workflow Databricks
 
@@ -179,4 +175,14 @@ Basta unir as duas tabelas para gerar uma visão de logs em ambos ambientes.
 - Crie um painel com as fontes de dados da tabela lineage-tables-monitoring em ambos os schemas e inclua uma coluna de contagem para criação de insights no painel do dashbaord.
 
 ![Image](https://github.com/user-attachments/assets/f9c9c445-44ef-4acc-9277-26de13890d1a)
+
+- Ao final da construção e execuções do workflow, teremo resultados semelhantes ao das imagens abaixo:
+
+![dashboard-monitoramento](https://github.com/user-attachments/assets/99bb03ff-c23f-4215-936b-54ad73388899)
+
+![Image](https://github.com/user-attachments/assets/98165ea3-e252-462a-8e15-7620cc1dee93)
+
+![Image](https://github.com/user-attachments/assets/93fa08db-d369-40c1-9c37-2321646efdcb)
+
+![execucoes-job](https://github.com/user-attachments/assets/0eba13a8-e0cb-43a6-b577-18f7f0b3eb3d)
   
