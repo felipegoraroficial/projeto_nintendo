@@ -16,35 +16,35 @@ Os scripts são versionados e separados por ambientes de desenvolvimento (dev) e
 
 ![arquitetura-projeto-nintendo](https://github.com/user-attachments/assets/7e06bcbe-da5e-42a4-a9d2-bf7abaf7a238)
 
-## Objetivo:
+## Meta:
 
 1. **Captação e Armazenamento de Dados Brutos**:
     - **Objetivo**: Capturar dados brutos diários de sites de e-commerce e marketplaces para análise posterior.
     - **Benefício**: Permite a reprocessamento dos dados caso os sites mudem, preservando a integridade dos dados históricos.
 
-2. **Processamento de Dados com BeautifulSoup**:
+2. **Captação e Armazenamento de Elemento HTML**:
     - **Objetivo**: Extrair informações essenciais dos arquivos HTML, como links, títulos, preços, promoções, parcelamentos e imagens dos produtos.
     - **Benefício**: Flexibilidade para ajustar o processamento conforme necessário, sem a perda de dados brutos.
 
-3. **Integração e Limpeza de Dados com PySpark**:
-    - **Objetivo**: Unificar os dados extraídos em um único dataframe e realizar a limpeza e tratamento dos mesmos.
-    - **Benefício**: Melhoria da qualidade dos dados, com correção de valores nulos e extração de informações adicionais dos títulos dos anúncios. Além disso, por se tratar de Spark, os dados são escalonáveis, suportando big data.
+3. **Processamento e Escalabilidade para BigData**:
+    - **Objetivo**: Aplicar processamento Spark ao conjuntos de dados na etapa de transformação.
+    - **Benefício**: Melhoria da qualidade dos dados, com correção de dados e padronização do mesmo e, além disso, o processamento de dados escalonáveis e suportando big data.
 
 4. **Armazenamento Seguro dos Dados**:
     - **Objetivo**: Armazenar dados tratados em uma external table no Databricks, garantindo a segurança e integridade dos dados.
-    - **Benefício**: Proteção dos dados em armazenamento externo, prevenindo perdas devido à exclusão de tabelas no Databricks.
+    - **Benefício**: Proteção dos dados em armazenamento externo, prevenindo perdas ou alterações equivocadas no dado.
 
 ![external-table-databricks](https://github.com/user-attachments/assets/87fa2d19-d802-4f03-befc-940b321fbc24)
 
-5. **Normalização e Análise de Dados com DBT**:
-    - **Objetivo**: Normalizar os dados em views e métricas para facilitar análises de dados.
-    - **Benefício**: Separação de funções entre engenheiros de dados e analistas, aumentando a segurança e eficiência do processo.
+5. **Separação de Plataforma entre Times**:
+    - **Objetivo**: Separação de processos entre engenheiros de dados (Plataforma Databricks) e analistas dados (Plataforma dbt).
+    - **Benefício**: Ganho em foco e agilidade no processo, segurança em carga de trabalho e governança sobre a plataforma
 
 ![lineage-dbt](https://github.com/user-attachments/assets/ebe099b3-0a17-4a2d-a6ec-f757f5899d3c)
 
-6. **Monitoramento e Notificação**:
-    - **Objetivo**: Automatizar todo o processo via workflows, gerando log do processo e monitoramento de lineage tables para criação de um dashboard de monitoramento e notificações de falhas e/ou tempo limite por e-mail.
-    - **Benefício**: Aumenta a eficiência operacional e permite resposta rápida a problemas.
+6. **Monitoramento de Processo**:
+    - **Objetivo**: Integrar ambas plataforma em um unico pipeline de dados.
+    - **Benefício**: Monitoramento e velocidade na interpretação de incidente para atuar em correções e/ou manutenções.
 
 ![dashboard-monitoramento](https://github.com/user-attachments/assets/99bb03ff-c23f-4215-936b-54ad73388899)
 
