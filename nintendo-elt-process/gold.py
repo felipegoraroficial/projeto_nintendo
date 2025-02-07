@@ -22,7 +22,9 @@
 
 import os
 import json
-import sys
+from delta.tables import DeltaTable
+from pyspark.sql.functions import *
+from pyspark.sql.window import Window
 
 # COMMAND ----------
 
@@ -94,19 +96,6 @@ spark.sql(query)
 
 # COMMAND ----------
 
-# Adiciona o caminho do diretório 'meus_scripts_pyspark' ao sys.path
-# Isso permite que módulos Python localizados nesse diretório sejam importados
-# Ajusta o caminho do diretório para os primeiros 3 níveis
-current_dir = '/'.join(current_path.split('/')[:3])
-
-sys.path.append(f'/Workspace{current_dir}/meus_scripts_pyspark')
-
-# COMMAND ----------
-
-from verify_new_lines import verify_new_lines
-
-# COMMAND ----------
-
 # Carregando tabela gold antiga
 try:
     tabela = spark.read.table(f"nintendo_databricks.{env}.`nintendo-bigtable`")
@@ -119,11 +108,39 @@ if tabela.rdd.isEmpty():
     novos_registros = df
 
 else:
-    # Realize uma junção à esquerda (left anti join) para encontrar os novos registros
-    condicao_join = (
-        (df["id"] == tabela["id"]) & (df["file_date"] != tabela["file_date"])
-    ) | ~(df["id"] == tabela["id"])
-    novos_registros = verify_new_lines(df, tabela, condicao_join)
+    # Realize um join para encontrar os novos registros entre id e file dates diferentes
+    def join_dataframes(df1, df2):
+
+        df_joined1 = df1.join(df2, "id", "left_anti")
+
+        # Transformando a coluna file_date_1 de tipo date para string
+        df1 = df1.withColumn("file_date", col("file_date").cast("string"))
+
+        # Transformando a coluna file_date_2 de tipo date para string
+        df2 = df2.withColumn("file_date", col("file_date").cast("string"))
+
+        df1 = df1.withColumnRenamed("file_date", "file_date_1").withColumn("id_file_date", concat(col("id").cast("string"), col("file_date_1").cast("string")))
+
+        df2 = df2.withColumnRenamed("file_date", "file_date_2").withColumn("id_file_date", concat(col("id").cast("string"), col("file_date_2").cast("string")))
+
+        # Transformando a coluna file_date_1 de tipo string para date
+        df1 = df1.withColumn("file_date_1", col("file_date_1").cast("date"))
+
+        # Transformando a coluna file_date_2 de tipo string para date
+        df2 = df2.withColumn("file_date_2", col("file_date_2").cast("date"))
+
+        # Fazendo o join pelo campo 'id' para encontrar registros correspondentes
+        df_joined2 = df1.join(df2, on='id_file_date', how='inner')
+
+        # Filtrando onde os 'file_date' são diferentes entre os dois DataFrames
+        df_joined2 = df_joined2.filter(col("file_date_1") != col("file_date_2")).select(df1["*"]).drop("id_file_date")
+
+        # Renomeando a coluna file_date_1 para file_date para manter a consistência
+        df_joined2 = df_joined2.withColumnRenamed("file_date_1", "file_date")
+
+        return df_joined1.union(df_joined2)
+
+    novos_registros = join_dataframes(df, tabela)
 
 #filtra apenas registros ativos
 novos_registros = novos_registros.filter(novos_registros['status'] == 'ativo')
@@ -142,24 +159,23 @@ novos_registros.write \
 
 # COMMAND ----------
 
-from delta.tables import DeltaTable
-from pyspark.sql.functions import *
-
 # Define o caminho para a tabela Delta
 delta_path = f"abfss://{env}@{storage}.dfs.core.windows.net/gold"
 
 # Carrega a tabela Delta usando o formato Delta
 delta_df = spark.read.format("delta").load(delta_path)
 
-# Encontra a data máxima para cada id
-max_dates_df = delta_df.groupBy("id").agg(max("file_date").alias("max_file_date"))
+# Adiciona uma coluna de número de linha para identificar duplicados
+window_spec = Window.partitionBy("id").orderBy(col("file_date").desc())
+delta_df = delta_df.withColumn("row_number", row_number().over(window_spec))
 
-# Cria a coluna 'status' com base na comparação de datas
-delta_df = delta_df.join(max_dates_df, "id", "inner")
-delta_df = delta_df.withColumn(
-    "status",
-    when(col("file_date") == col("max_file_date"), "ativado").otherwise("desativado")
-).drop("max_file_date")
+# Filtra apenas a primeira ocorrência de cada id
+delta_df = delta_df.filter(col("row_number") == 2).drop("row_number")
+
+# Define a coluna status como "ativo"
+delta_df = delta_df.withColumn("status", lit("inativo"))
+
+# COMMAND ----------
 
 # Converte o DataFrame de volta para uma tabela Delta e salva as alterações
 delta_table = DeltaTable.forPath(spark, delta_path)  # Usa forPath com o caminho
@@ -168,5 +184,4 @@ delta_table.alias("tabela_delta").merge(
     "tabela_delta.id = atualizacoes.id"
 ).whenMatchedUpdate(set={
     "status": "atualizacoes.status",
-
 }).execute()
