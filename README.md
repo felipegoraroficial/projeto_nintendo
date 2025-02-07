@@ -138,6 +138,7 @@ https://learn.microsoft.com/en-us/azure/databricks/data-governance/unity-catalog
 ![dbt-conection](https://github.com/user-attachments/assets/9c22d837-4467-4c0c-bf3b-8e13acd3c683)
 
 - Conecte o GitHub ao dbt com um token de uso pessoal.
+- Use este link para clonar o repositório do projeto dbt: https://github.com/felipegoraroficial/dbt_project
 - Com as conexões realizadas, crie um arquivos YML para os schemas dev e prd em cada branch, que serão as fontes de busca para trabalhar com os dados no Databricks de forma separada por ambiente.
 - Ao final, teremos um pipeline de dado no dbt igual o da imagem abaixo
 
