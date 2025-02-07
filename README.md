@@ -34,25 +34,13 @@ Os scripts são versionados e separados por ambientes de desenvolvimento (dev) e
     - **Objetivo**: Armazenar dados tratados em uma external table no Databricks, garantindo a segurança e integridade dos dados.
     - **Benefício**: Proteção dos dados em armazenamento externo, prevenindo perdas ou alterações equivocadas no dado.
 
-![external-table-databricks](https://github.com/user-attachments/assets/87fa2d19-d802-4f03-befc-940b321fbc24)
-
 5. **Separação de Plataforma entre Times**:
     - **Objetivo**: Separação de processos entre engenheiros de dados (Plataforma Databricks) e analistas dados (Plataforma dbt).
     - **Benefício**: Ganho em foco e agilidade no processo, segurança em carga de trabalho e governança sobre a plataforma
 
-![lineage-dbt](https://github.com/user-attachments/assets/ebe099b3-0a17-4a2d-a6ec-f757f5899d3c)
-
 6. **Monitoramento de Processo**:
     - **Objetivo**: Integrar ambas plataforma em um unico pipeline de dados.
     - **Benefício**: Monitoramento e velocidade na interpretação de incidente para atuar em correções e/ou manutenções.
-
-![dashboard-monitoramento](https://github.com/user-attachments/assets/99bb03ff-c23f-4215-936b-54ad73388899)
-
-![Image](https://github.com/user-attachments/assets/98165ea3-e252-462a-8e15-7620cc1dee93)
-
-![Image](https://github.com/user-attachments/assets/93fa08db-d369-40c1-9c37-2321646efdcb)
-
-![execucoes-job](https://github.com/user-attachments/assets/0eba13a8-e0cb-43a6-b577-18f7f0b3eb3d)
 
 ## Etapas do projeto:
 
@@ -99,6 +87,9 @@ Com o Azure Databricks criado sem nenhuma particularidade específica, basta ace
   
 - Criação de uma credencial externa no cálogo.
 - Criação de duas external location para os container dev e prd (necessário para a criação da external table e volumes).
+
+![external-table-databricks](https://github.com/user-attachments/assets/87fa2d19-d802-4f03-befc-940b321fbc24)
+
 - Criação de volumes, em ambos schmas dev e prd, e para cada hierarquia medalhão mencionada na etapa acima.
 
 ![volume-databricks](https://github.com/user-attachments/assets/455722a8-8466-4e08-9e8c-6f86377bd2e7)
@@ -143,10 +134,14 @@ https://learn.microsoft.com/en-us/azure/databricks/data-governance/unity-catalog
 
 - Com a conta no dbt criada, crie seu projeto.
 - Conecte o Databricks ao dbt utilizando as informações do cluster: o host, o caminho HTTP (http path) e a porta, que geralmente é a 443.
-- Conecte o GitHub ao dbt com um token de uso pessoal.
-- Com as conexões realizadas, crie dois arquivos YML para os schemas dev e prd, que serão as fontes de busca para trabalhar com os dados no Databricks.
 
 ![dbt-conection](https://github.com/user-attachments/assets/9c22d837-4467-4c0c-bf3b-8e13acd3c683)
+
+- Conecte o GitHub ao dbt com um token de uso pessoal.
+- Com as conexões realizadas, crie um arquivos YML para os schemas dev e prd em cada branch, que serão as fontes de busca para trabalhar com os dados no Databricks de forma separada por ambiente.
+- Ao final, teremos um pipeline de dado no dbt igual o da imagem abaixo
+
+![lineage-dbt](https://github.com/user-attachments/assets/ebe099b3-0a17-4a2d-a6ec-f757f5899d3c)
 
 ### 7.Workflow Databricks
 
@@ -179,4 +174,14 @@ Basta unir as duas tabelas para gerar uma visão de logs em ambos ambientes.
 - Crie um painel com as fontes de dados da tabela lineage-tables-monitoring em ambos os schemas e inclua uma coluna de contagem para criação de insights no painel do dashbaord.
 
 ![Image](https://github.com/user-attachments/assets/f9c9c445-44ef-4acc-9277-26de13890d1a)
+
+- Ao final da construção e execuções do workflow, teremo resultados semelhantes ao das imagens abaixo:
+
+![dashboard-monitoramento](https://github.com/user-attachments/assets/99bb03ff-c23f-4215-936b-54ad73388899)
+
+![Image](https://github.com/user-attachments/assets/98165ea3-e252-462a-8e15-7620cc1dee93)
+
+![Image](https://github.com/user-attachments/assets/93fa08db-d369-40c1-9c37-2321646efdcb)
+
+![execucoes-job](https://github.com/user-attachments/assets/0eba13a8-e0cb-43a6-b577-18f7f0b3eb3d)
   
