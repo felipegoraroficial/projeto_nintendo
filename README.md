@@ -50,7 +50,7 @@ Os scripts são versionados e separados por ambientes de desenvolvimento (dev) e
 - Na mesma conta de armazenamento, foram criados dois containers, dev e prd, para separar os dados de produção daqueles em desenvolvimento.
 - Em cada container, foram criados volumes do Databricks com link externos para definição de uma hierarquia de pastas que será utilizada para a construção do processo ELTL no modelo de medalhão, onde temos os seguintes dados:
     - Inbound: Dados brutos conforme vêm da extração web em formato HTML, separados pela data da extração.
-    - Bronze: Identificação dos elementos web necessários para o projeto e armazenados em um arquivo JSON conforme a data do arquivo de extração.
+    - Bronze: Identificação dos elementos web necessários para o projeto e armazenados em um arquivo PARQUET conforme a data do arquivo de extração.
     - Silver: União de todos os arquivos em seus diferentes diretórios e o tratamento de limpeza e ajuste dos dados.
     - Gold: Criação da external table no databricks com a fonte de dados na conta de armazenamento particionada pela data de extração.
 
