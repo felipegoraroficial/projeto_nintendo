@@ -96,17 +96,25 @@ if currrent_files_path:  # Verifica se há um caminho de arquivo atual
 
         sopa_bonita = BeautifulSoup(resposta.text, 'html.parser')  # Analisa o conteúdo HTML da resposta usando BeautifulSoup
 
-        codigo = sopa_bonita.find('span', class_='sc-dcJsrY daMqkh').text  # Extrai o codigo do produto
+        if sopa_bonita.find('span', class_='sc-dcJsrY daMqkh'): # Verifica se há um elemento de codigo do produto
+            codigo = sopa_bonita.find('span', class_='sc-dcJsrY daMqkh').text  # Extrai o codigo do produto
+        elif sopa_bonita.find('span', class_='sc-iGgWBj eXbWIe'): # Verifica se há um elemento de codigo do produto
+            codigo = sopa_bonita.find('span', class_='sc-iGgWBj eXbWIe').text  # Extrai o codigo do produto
+        else:
+            codigo = "sem código"
 
         titulo = sopa_bonita.find('h1', {'data-testid': 'heading-product-title'}).text  # Extrai o título do produto
 
         preco = sopa_bonita.find('p', {'data-testid': 'price-value'}) # Extrai o preço do produto
         preco = preco.text if preco else "R$ 0,00" # Se não encontrado texto no elemento, retorne R$0,00
 
-        desconto = "sem desconto"  # Define o valor padrão para desconto
 
         if sopa_bonita.find('span', class_='sc-fyVfxW bBlpKX'):  # Verifica se há um elemento de desconto
             desconto = sopa_bonita.find('span', class_='sc-fyVfxW bBlpKX').text  # Extrai o valor do desconto
+        elif sopa_bonita.find('span', class_='sc-eHsDsR bYZWfg'):  # Verifica se há um elemento de desconto
+            desconto = sopa_bonita.find('span', class_='sc-eHsDsR bYZWfg').text  # Extrai o valor do desconto
+        else:
+            desconto = "sem desconto"  # Define o valor padrão para desconto
 
         moeda = preco[0] + preco[1]  # Extrai a moeda do preço
 
@@ -114,6 +122,8 @@ if currrent_files_path:  # Verifica se há um caminho de arquivo atual
             parcelamento = sopa_bonita.find('p', class_='sc-dcJsrY bdQQwX sc-joQczN fWWRYL').text  # Extrai o valor do parcelamento
         elif sopa_bonita.find('p', class_='sc-dcJsrY bdQQwX sc-kobALw yIiQA'):  # Verifica se há um elemento alternativo de parcelamento
             parcelamento = sopa_bonita.find('p', class_='sc-dcJsrY bdQQwX sc-kobALw yIiQA').text  # Extrai o valor do parcelamento alternativo
+        elif sopa_bonita.find('p', class_='sc-iGgWBj idhlOX sc-SrznA hXFzWz'):  # Verifica se há um elemento alternativo de parcelamento
+            parcelamento = sopa_bonita.find('p', class_='sc-iGgWBj idhlOX sc-SrznA hXFzWz').text  # Extrai o valor do parcelamento alternativo
         else:
             parcelamento = "sem parcelamento"  # Define o valor padrão para parcelamento
 
@@ -142,10 +152,10 @@ df = rdd.toDF()
 # COMMAND ----------
 
 # Caminho para a external location do diretório bronze
-bronze_path = currrent_files_path.replace('inbound', 'bronze').replace('.txt', '')
+bronze_path = f"/Volumes/nintendo_databricks/{env}/magalu-vol/bronze/{data_atual}"
 
 # Salva o DataFrame Spark no arquivo Parquet
-df.write.mode('overwrite').parquet(bronze_path)
+df.coalesce(1).write.mode('overwrite').parquet(bronze_path)
 
 # COMMAND ----------
 

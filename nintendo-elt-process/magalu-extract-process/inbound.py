@@ -61,7 +61,7 @@ from req_bsoup import req_bsoup
 current_date = datetime.datetime.now().strftime("%Y-%m-%d")
 
 # define a url para scrapy
-url= "https://www.magazineluiza.com.br/nintendo/games/s/ga/ntdo/"
+url= "https://www.magazineluiza.com.br/busca/console+nintendo+switch/"
 
 # chama a função para extração de dados brutos da url
 page_content = req_bsoup(url)
