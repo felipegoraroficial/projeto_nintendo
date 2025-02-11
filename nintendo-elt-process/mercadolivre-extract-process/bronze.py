@@ -172,10 +172,10 @@ df = rdd.toDF()
 # COMMAND ----------
 
 # Caminho para a external location do diretório bronze
-bronze_path = currrent_files_path.replace('inbound', 'bronze').replace('.txt', '')
+bronze_path = f"/Volumes/nintendo_databricks/{env}/mercadolivre-vol/inbound/{data_atual}"
 
 # Salva o DataFrame Spark no arquivo Parquet
-df.write.mode('overwrite').parquet(bronze_path)
+df.coalesce(1).write.mode('overwrite').parquet(bronze_path)
 
 # COMMAND ----------
 

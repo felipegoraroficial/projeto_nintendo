@@ -73,6 +73,7 @@ df = spark.read.parquet(silver_path)
 query = f"""
 CREATE EXTERNAL TABLE IF NOT EXISTS {env}.`nintendo-bigtable` (
     id STRING,
+    codigo STRING,
     titulo STRING, 
     moeda STRING, 
     condition_promo STRING, 

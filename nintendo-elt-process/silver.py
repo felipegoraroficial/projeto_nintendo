@@ -61,6 +61,7 @@ from extract_characters import extract_characters
 from filter_like import filter_like
 from extract_memory import extract_memory
 from condition_like import condition_like
+from concat_columns import concat_columns
 
 # COMMAND ----------
 
@@ -79,6 +80,7 @@ from schema_equals_df_schema import schema_equals_df_schema
 # Definindo o esquema para o DataFrame
 schema = StructType([
     StructField("id", StringType(), True),              # ID do produto
+    StructField("codigo", StringType(), True),          # Codigo do produto
     StructField("titulo", StringType(), True),          # Título do produto
     StructField("moeda", StringType(), True),           # Moeda utilizada na transação
     StructField("condition_promo", StringType(), True), # Condição promocional do produto
@@ -124,11 +126,6 @@ df = union_df(ml, mg)
 
 # COMMAND ----------
 
-# Seleciona as colunas específicas do DataFrame para manter no resultado final
-df = df.select('codigo','titulo', 'moeda', 'condition_promo', 'preco_promo', 'parcelado', 'link', 'file_name', 'file_date', 'status')
-
-# COMMAND ----------
-
 df = type_monetary(df, "preco_promo")
 
 # COMMAND ----------
@@ -140,6 +137,15 @@ df = replace_characters(df, "codigo", "Código ", "")
 # COMMAND ----------
 
 df = convert_currency_column(df, 'preco_promo')
+
+# COMMAND ----------
+
+df = concat_columns(df, "codigo", "file_date", "id")
+
+# COMMAND ----------
+
+# Seleciona as colunas específicas do DataFrame para manter no resultado final
+df = df.select('id','codigo','titulo', 'moeda', 'condition_promo', 'preco_promo', 'parcelado', 'link', 'file_name', 'file_date', 'status')
 
 # COMMAND ----------
 
