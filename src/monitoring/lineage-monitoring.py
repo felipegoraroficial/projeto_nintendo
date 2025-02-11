@@ -32,7 +32,7 @@ current_path = os.path.dirname(dbutils.notebook.entry_point.getDbutils().noteboo
 current_dir = '/'.join(current_path.split('/')[:4])
 
 # Define o caminho do arquivo de configuração
-config_path = f"/Workspace{current_dir}/config.json"
+config_path = f"/Workspace{current_dir}/config//config.json"
 
 # Abre o arquivo de configuração e carrega seu conteúdo em um dicionário
 with open(config_path, "r") as f:
