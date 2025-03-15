@@ -48,7 +48,7 @@ sys.path.append(f'/Workspace{current_dir}/meus_scripts_pyspark')
 
 # COMMAND ----------
 
-from organize_files import process_data_to_bronze
+from organize_files import organize_files
 from change_null_string import change_null_string
 from change_null_numeric import change_null_numeric
 from union_df import union_df
@@ -100,7 +100,7 @@ bronze_path = f'/Volumes/nintendo_databricks/{env}/magalu-vol/bronze/'
 # Lendo arquivos PARQUET do diretório bronze
 mg = spark.read.parquet(bronze_path)
 
-mg = process_data_to_bronze(mg,'codigo')
+mg = organize_files(mg,'codigo')
 
 # COMMAND ----------
 
@@ -114,7 +114,7 @@ bronze_path = f'/Volumes/nintendo_databricks/{env}/mercadolivre-vol/bronze/'
 # Lendo arquivos PARQUET do diretório bronze
 ml = spark.read.parquet(bronze_path)
 
-ml = process_data_to_bronze(ml,'codigo')
+ml = organize_files(ml,'codigo')
 
 # COMMAND ----------
 
