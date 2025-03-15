@@ -1,5 +1,17 @@
 # WebScrapy de Anúncios de Dados de Consoles Nintendo Switch
 
+## Objetivo:
+
+O objetivo deste projeto é a captura de dados referentes a anúncios de vendas em e-commerce/marketplaces, com foco específico nos consoles Nintendo Switch. Os dados capturados são tratados e armazenados em um ambiente na nuvem, permitindo sua integração com ferramentas de visualização de dados (DataViz). Isso possibilita a geração de gráficos e insights para identificar os melhores preços e as principais características dos consoles em diferentes marketplaces.
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/44df77ae-63ca-4d69-8c58-7820cdb98b5a" alt="Desenho Técnico">
+  <p><b>Desenho Funcional</b></p>
+</div>
+
+<p align="left">
+</p>
+
 ## Introdução:
 
 O projeto foi desenvolvido utilizando as linguagens de programação Python e PySpark no ambiente em nuvem do Azure Databricks. Para a normalização e modelagem de dados, foi utilizado SQL na plataforma dbt Cloud.
@@ -14,7 +26,14 @@ No final do workflow é gerado dados referente a log do processo e lienage de ta
 
 Os scripts são versionados e separados por ambientes de desenvolvimento (dev) e produção (prd).
 
-![arquitetura-projeto-nintendo](https://github.com/user-attachments/assets/7e06bcbe-da5e-42a4-a9d2-bf7abaf7a238)
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/0d7a4b5a-d1fe-4254-9726-c629b19f5649" alt="Desenho Técnico">
+  <p><b>Desenho Técnico</b></p>
+</div>
+
+<p align="left">
+</p>
+
 
 ## Meta:
 
@@ -42,7 +61,7 @@ Os scripts são versionados e separados por ambientes de desenvolvimento (dev) e
     - **Objetivo**: Integrar ambas plataforma em um unico pipeline de dados.
     - **Benefício**: Monitoramento e velocidade na interpretação de incidente para atuar em correções e/ou manutenções.
 
-## Etapas do projeto:
+## Construção do projeto:
 
 ### 1.Criação do storageaccount
 
@@ -54,61 +73,124 @@ Os scripts são versionados e separados por ambientes de desenvolvimento (dev) e
     - Silver: União de todos os arquivos em seus diferentes diretórios e o tratamento de limpeza e ajuste dos dados.
     - Gold: Criação da external table no databricks com a fonte de dados na conta de armazenamento particionada pela data de extração.
 
-  ![storage-container](https://github.com/user-attachments/assets/c064337e-660e-4664-b34f-f2f2ccbbb99f)
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/c064337e-660e-4664-b34f-f2f2ccbbb99f" alt="storageaccount">
+  <p><b>StorageAccount-Estrutura</b></p>
+</div>
+
+<p align="left">
+</p>
 
 - Em gerenciamento do ciclo de vida dos blobs, foi configurado um limite de vida de 30 dias para arquivos que estão an stage inbound e bronze para que não tenhamos uma grande quantidade de arquivos salvos na conta de armazenamento já que os registros são armazenados em external tables do catalog do databricks.
 
 OBS: O clico de vida de 30 dias de arquivos em stage inbound e bronze serve também para uma margem de segurança em casos de alterações de elementos do html extraidos para interação com o BeautifulSoup.
 
-  ![Image](https://github.com/user-attachments/assets/6d89a267-6f16-4940-abea-aed50aad7ef7)
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/6d89a267-6f16-4940-abea-aed50aad7ef7" alt="ciclo de vida blobs">
+  <p><b>Definindo Ciclo de Vida Blobs</b></p>
+</div>
+
+<p align="left">
+</p>
 
 ### 2.Criação do Azure Databricks
 
 Com o Azure Databricks criado sem nenhuma particularidade específica, basta acessar o workspace para realizar as configurações locais:
 - Integrar o GitHub ao Databricks com um token de uso pessoal.
 
-![token-git](https://github.com/user-attachments/assets/572867a3-c4d6-4308-9ecd-7e6028e33297)
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/572867a3-c4d6-4308-9ecd-7e6028e33297" alt="token-git">
+  <p><b>Configurando Git no Databricks</b></p>
+</div>
+
+<p align="left">
+</p>
 
 - Criação de um cluster: o Standard_DS3_v2 é mais que suficiente.
 
-![cluster-databricks](https://github.com/user-attachments/assets/c7cd3457-fa4d-4f57-a816-43775197e5a1)
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/c7cd3457-fa4d-4f57-a816-43775197e5a1" alt="cluster databricks">
+  <p><b>Configuração do Cluster</b></p>
+</div>
+
+<p align="left">
+</p>
 
 - Criação de schemas Dev e Prd no Catálogo do Databricks para separar os dados em ambientes.
 
-![catalog-databricks](https://github.com/user-attachments/assets/0d2f82cd-e585-4161-a853-2ac4396dc037)
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/0d2f82cd-e585-4161-a853-2ac4396dc037" alt="catalogo databricks">
+  <p><b>Estrutura do Catalogo do Projeto</b></p>
+</div>
+
+<p align="left">
+</p>
 
 - No espaço de trabalho, crie duas pastas, dev e prd, para separar os códigos em cada branch.
 - Importe os reseguintes repositórios para cada pasta com suas respectivas branches:
   https://github.com/felipegoraroficial/projeto_nintendo.git (o repositório do projeto)
   https://github.com/felipegoraroficial/meus_scripts_pyspark.git (o repositório referente a funções pypark para tratativas de dados do projeto)
   https://github.com/felipegoraroficial/meus_scripts_pytest.git (o repositório referente a testes de dados do projeto)
-  
-![workspace - databricks](https://github.com/user-attachments/assets/68fc0f43-25e4-4d7a-979c-9b49ccb5b038)
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/68fc0f43-25e4-4d7a-979c-9b49ccb5b038" alt="workspace databricks">
+  <p><b>Estrutura do Workspace do Projeto</b></p>
+</div>
+
+<p align="left">
+</p>
   
 - Criação de uma credencial externa no cálogo.
 - Criação de duas external location para os container dev e prd (necessário para a criação da external table e volumes).
 
-![external-table-databricks](https://github.com/user-attachments/assets/87fa2d19-d802-4f03-befc-940b321fbc24)
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/87fa2d19-d802-4f03-befc-940b321fbc24" alt="external table gold">
+  <p><b>External Table</b></p>
+</div>
+
+<p align="left">
+</p>
 
 - Criação de volumes, em ambos schmas dev e prd, e para cada hierarquia medalhão mencionada na etapa acima.
 
-![volume-databricks](https://github.com/user-attachments/assets/455722a8-8466-4e08-9e8c-6f86377bd2e7)
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/455722a8-8466-4e08-9e8c-6f86377bd2e7" alt="volumes databricks">
+  <p><b>Criação do Volumes no Databricks</b></p>
+</div>
+
+<p align="left">
+</p>
 
 ### 4.Liberação de System Tables
 
 - Verifique se o seu usuário está como adimin do workspace do databricks
 Para fazer isso, basta acessar o Microsfot Entry ID e ir em Funções e Administradores para verificar se seu usuário possui a função de Adminsitrador Global
 
-![Image](https://github.com/user-attachments/assets/21ca8d5a-c4b3-4e78-bbfa-be9b7bb96a9f)
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/21ca8d5a-c4b3-4e78-bbfa-be9b7bb96a9f" alt="config system table 1">
+</div>
+
+<p align="left">
+</p>
 
 - Caso não esteja siga os passos abaixos para atribuir seu usuario como admin
 Ao criar uma conta na Azure, é criado um email corporativo default, voce consegue obter esse e-mail acessando o Microsfot Entry ID em Usário
 
-![Image](https://github.com/user-attachments/assets/993b5437-9d5a-4a65-8bb2-2a894e7f86f4)
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/993b5437-9d5a-4a65-8bb2-2a894e7f86f4" alt="config system table 2">
+</div>
+
+<p align="left">
+</p>
 
 Acesse o link https://accounts.azuredatabricks.net/ e atribua o seu email pessoal como admin global do databricks
 
-![Image](https://github.com/user-attachments/assets/e82232ca-eddb-4a59-b8a7-1e6ca4a41d28)
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/e82232ca-eddb-4a59-b8a7-1e6ca4a41d28" alt="config system table 3">
+</div>
+
+<p align="left">
+</p>
 
 - Execute o codigo, em um notebook do databricks, abaixo para verificar as system tables que estão disponiveis para adquirir ao catalogo
 
@@ -135,24 +217,48 @@ https://learn.microsoft.com/en-us/azure/databricks/data-governance/unity-catalog
 - Com a conta no dbt criada, crie seu projeto.
 - Conecte o Databricks ao dbt utilizando as informações do cluster: o host, o caminho HTTP (http path) e a porta, que geralmente é a 443.
 
-![dbt-conection](https://github.com/user-attachments/assets/9c22d837-4467-4c0c-bf3b-8e13acd3c683)
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/9c22d837-4467-4c0c-bf3b-8e13acd3c683" alt="dbt conection">
+  <p><b>Conectando dbt ao Databricks</b></p>
+</div>
+
+<p align="left">
+</p>
 
 - Conecte o GitHub ao dbt com um token de uso pessoal.
 - Use este link para clonar o repositório do projeto dbt: https://github.com/felipegoraroficial/dbt_project
 - Com as conexões realizadas, crie um arquivos YML para os schemas dev e prd em cada branch, que serão as fontes de busca para trabalhar com os dados no Databricks de forma separada por ambiente.
 - Ao final, teremos um pipeline de dado no dbt igual o da imagem abaixo
 
-![lineage-dbt](https://github.com/user-attachments/assets/ebe099b3-0a17-4a2d-a6ec-f757f5899d3c)
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/ebe099b3-0a17-4a2d-a6ec-f757f5899d3c" alt="dbt lineage">
+  <p><b>Fluxo de Processo dbt</b></p>
+</div>
+
+<p align="left">
+</p>
 
 ### 7.Workflow Databricks
 
 - Crie dois workflows: um com a tag hml, que se refere ao fluxo de teste, e outro com a tag prd, que será o fluxo de produção.
-  
-![workflows](https://github.com/user-attachments/assets/aa100607-25ee-4ecb-8143-d66ea889b251)
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/aa100607-25ee-4ecb-8143-d66ea889b251" alt="jobs databricks">
+  <p><b>Jobs Databricks</b></p>
+</div>
+
+<p align="left">
+</p>
 
 - Em cada workflow, habilite a integração com o Git para poder rodar processos do dbt.
 
-![config-dbt-workflow-databricks](https://github.com/user-attachments/assets/4e913064-fc1f-4518-a391-fa8221b9ad50)
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/4e913064-fc1f-4518-a391-fa8221b9ad50" alt="config-dbt-workflow-databricks">
+  <p><b>Configurando Task com dbt</b></p>
+</div>
+
+<p align="left">
+</p>
 
 - As tarefas que não forem relacionadas a processos do dbt serão realizadas com notebooks do espaço local, tornando dinâmica a tratativa entre os ambientes.
 - Agende o workflow de sua preferência. Para cada ambiente, foi utilizada a sintaxe cron:
@@ -160,7 +266,13 @@ https://learn.microsoft.com/en-us/azure/databricks/data-governance/unity-catalog
   - prd: 0 0 9,13,17 ? * MON-FRI *
 - Ative as notificações de falhas e tempo de processo para que você seja notificado por e-mail.
 
-![details-workflow](https://github.com/user-attachments/assets/2a2586db-50fd-4b68-aaaf-ac0f9e7422fe)
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/2a2586db-50fd-4b68-aaaf-ac0f9e7422fe" alt="details-workflow">
+  <p><b>Detalhes da Configuração do Job</b></p>
+</div>
+
+<p align="left">
+</p>
 
 ### 8.Dashboard Monitoramento via Databricks
 
@@ -170,19 +282,55 @@ Ao fim do pipeline é gerado uma tabela de log do workflow para cada ambiente, s
 
 Basta unir as duas tabelas para gerar uma visão de logs em ambos ambientes.
 
-![fonte-dados-painel](https://github.com/user-attachments/assets/db5f2d29-086c-4ef1-9e49-58546d1996d9)
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/db5f2d29-086c-4ef1-9e49-58546d1996d9" alt="fonte-dados-painel">
+</div>
+
+<p align="left">
+</p>
 
 - Crie um painel com as fontes de dados da tabela lineage-tables-monitoring em ambos os schemas e inclua uma coluna de contagem para criação de insights no painel do dashbaord.
 
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/f9c9c445-44ef-4acc-9277-26de13890d1a" alt="query painel">
+</div>
+
+<p align="left">
+</p>
 ![Image](https://github.com/user-attachments/assets/f9c9c445-44ef-4acc-9277-26de13890d1a)
 
 - Ao final da construção e execuções do workflow, teremo resultados semelhantes ao das imagens abaixo:
 
-![dashboard-monitoramento](https://github.com/user-attachments/assets/99bb03ff-c23f-4215-936b-54ad73388899)
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/99bb03ff-c23f-4215-936b-54ad73388899" alt="dashboard-monitoramento">
+  <p><b>Dashboard de Monitoramento de Jobs no Databricks</b></p>
+</div>
 
+<p align="left">
+</p>
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/98165ea3-e252-462a-8e15-7620cc1dee93" alt="dashboard-monitoramento">
+  <p><b>Dashboard de Monitoramente de Leitura e Escrita das Tabelas no Databricks</b></p>
+</div>
+
+<p align="left">
+</p>
 ![Image](https://github.com/user-attachments/assets/98165ea3-e252-462a-8e15-7620cc1dee93)
 
-![Image](https://github.com/user-attachments/assets/93fa08db-d369-40c1-9c37-2321646efdcb)
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/93fa08db-d369-40c1-9c37-2321646efdcb" alt="workflows">
+  <p><b>Workflows do Databricks</b></p>
+</div>
 
-![execucoes-job](https://github.com/user-attachments/assets/0eba13a8-e0cb-43a6-b577-18f7f0b3eb3d)
+<p align="left">
+</p>
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/0eba13a8-e0cb-43a6-b577-18f7f0b3eb3d" alt="details workflows">
+  <p><b>Execuções Workflows do Databricks</b></p>
+</div>
+
+<p align="left">
+</p>
   
