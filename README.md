@@ -27,7 +27,7 @@ No final do workflow é gerado dados referente a log do processo e lienage de ta
 Os scripts são versionados e separados por ambientes de desenvolvimento (dev) e produção (prd).
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/0d7a4b5a-d1fe-4254-9726-c629b19f5649" alt="Desenho Técnico">
+  <img src="https://github.com/user-attachments/assets/74d30a1c-222a-4576-bb07-a0a2ecaa7be9" alt="Desenho Técnico">
   <p><b>Desenho Técnico</b></p>
 </div>
 
