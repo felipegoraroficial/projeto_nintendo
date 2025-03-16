@@ -316,7 +316,7 @@ Basta unir as duas tabelas para gerar uma visão de logs em ambos ambientes.
 
 <p align="left">
 </p>
-![Image](https://github.com/user-attachments/assets/98165ea3-e252-462a-8e15-7620cc1dee93)
+
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/93fa08db-d369-40c1-9c37-2321646efdcb" alt="workflows">
