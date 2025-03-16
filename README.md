@@ -297,7 +297,7 @@ Basta unir as duas tabelas para gerar uma visão de logs em ambos ambientes.
 
 <p align="left">
 </p>
-![Image](https://github.com/user-attachments/assets/f9c9c445-44ef-4acc-9277-26de13890d1a)
+
 
 - Ao final da construção e execuções do workflow, teremo resultados semelhantes ao das imagens abaixo:
 
