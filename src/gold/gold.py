@@ -167,21 +167,42 @@ delta_path = f"abfss://{env}@{storage}.dfs.core.windows.net/gold"
 delta_df = spark.read.format("delta").load(delta_path)
 
 # Adiciona uma coluna de número de linha para identificar duplicados
-window_spec = Window.partitionBy("id").orderBy(col("file_date").desc())
+window_spec = Window.partitionBy("codigo").orderBy(col("file_date").desc())
 delta_df = delta_df.withColumn("row_number", row_number().over(window_spec))
 
+# Identificando registros ativos
 # Filtra apenas a primeira ocorrência de cada id
-delta_df = delta_df.filter(col("row_number") == 2).drop("row_number")
+delta_df_ativo = delta_df.filter(col("row_number") == 1).drop("row_number")
 
 # Define a coluna status como "ativo"
-delta_df = delta_df.withColumn("status", lit("inativo"))
+delta_df_ativo = delta_df_ativo.withColumn("status", lit("ativo"))
+
+# Identificando registros inativos
+# Filtra apenas a primeira ocorrência de cada id
+delta_df_inativos = delta_df.filter(col("row_number") > 1).drop("row_number")
+
+# Define a coluna status como "ativo"
+delta_df_inativos = delta_df_inativos.withColumn("status", lit("inativo"))
 
 # COMMAND ----------
 
+# Salvando status como inativo
 # Converte o DataFrame de volta para uma tabela Delta e salva as alterações
-delta_table = DeltaTable.forPath(spark, delta_path)  # Usa forPath com o caminho
+delta_table = DeltaTable.forPath(spark, delta_path)
 delta_table.alias("tabela_delta").merge(
-    delta_df.alias("atualizacoes"),
+    delta_df_inativos.alias("atualizacoes"),
+    "tabela_delta.id = atualizacoes.id"
+).whenMatchedUpdate(set={
+    "status": "atualizacoes.status",
+}).execute()
+
+# COMMAND ----------
+
+# Salvando status como ativo
+# Converte o DataFrame de volta para uma tabela Delta e salva as alterações
+delta_table = DeltaTable.forPath(spark, delta_path)
+delta_table.alias("tabela_delta").merge(
+    delta_df_ativo.alias("atualizacoes"),
     "tabela_delta.id = atualizacoes.id"
 ).whenMatchedUpdate(set={
     "status": "atualizacoes.status",
