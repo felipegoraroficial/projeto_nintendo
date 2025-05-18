@@ -17,41 +17,7 @@
 # COMMAND ----------
 
 import datetime
-import os
-import json
-import sys
-
-# COMMAND ----------
-
-# Obtém o caminho do diretório atual do notebook
-current_path = os.path.dirname(dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get())
-
-# COMMAND ----------
-
-# Verifica se o caminho atual contém a string "dev"
-if "dev" in current_path:
-    # Define o ambiente como "dev"
-    env = "dev"
-# Verifica se o caminho atual contém a string "prd"
-elif "prd" in current_path:
-    # Define o ambiente como "prd"
-    env = "prd"
-# Caso contrário, define o ambiente como "env não encontrado"
-else:
-    env = "env não encontrado"
-
-# COMMAND ----------
-
-# Adiciona o caminho do diretório 'meus_scripts_pyspark' ao sys.path
-# Isso permite que módulos Python localizados nesse diretório sejam importados
-# Ajusta o caminho do diretório para os primeiros 3 níveis
-current_dir = '/'.join(current_path.split('/')[:3])
-
-sys.path.append(f'/Workspace{current_dir}/meus_scripts_pyspark')
-
-# COMMAND ----------
-
-from req_bsoup import req_bsoup
+import requests
 
 # COMMAND ----------
 
@@ -61,11 +27,24 @@ current_date = datetime.datetime.now().strftime("%Y-%m-%d")
 # define a url para scrapy
 url = "https://lista.mercadolivre.com.br/nintendo-switch"
 
-# chama a função para extração de dados brutos da url
-page_content = req_bsoup(url)
+# Define o cabeçalho do agente de usuário para a requisição HTTP
+headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+    'Accept-Language': 'pt-BR,pt;q=0.8,en-US;q=0.5,en;q=0.3',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Connection': 'keep-alive'
+}
+
+# Faz uma requisição GET para a URL especificada com o número da página e cabeçalho
+resposta = requests.get(url, headers=headers)
+
+filetext = resposta.text
+
+# COMMAND ----------
 
 # define o caminho inbound da external location da storage account
-file_path = f"/Volumes/nintendo_databricks/{env}/mercadolivre-vol/inbound/{current_date}.txt"
+file_path = f"/Volumes/nintendoworkspace/nintendoschema/inbound-vol/mercadolivre/{current_date}.html'
 
 # Escreve o conteúdo da página no arquivo usando dbutils.fs.put
-dbutils.fs.put(file_path, page_content, overwrite=True)
+dbutils.fs.put(file_path, filetext, overwrite=True)

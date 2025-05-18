@@ -42,7 +42,7 @@ ai_key = os.environ.get("OPENAI_API")
 data_atual = datetime.now().strftime("%Y-%m-%d")
 
 # Caminho para o diretório de entrada
-inbound_path = f"/Volumes/nintendoworkspace/nintendoschema/inbound-vol/mercadolivre"
+inbound_path = f"/Volumes/nintendoworkspace/nintendoschema/inbound-vol/casasbahia"
 
 # Lista todos os arquivos no diretório de entrada que terminam com ".html"
 file_paths = [
@@ -66,8 +66,6 @@ if currrent_files_path:  # Verifica se há um caminho de arquivo atual
 
     sopa_bonita = BeautifulSoup(html_content, 'html.parser')
 
-    scripts_json = sopa_bonita.find_all('script', type='application/ld+json')
-
 # COMMAND ----------
 
 # Criar um agente LangChain para interagir com o DataFrame
@@ -85,7 +83,7 @@ prompt = ChatPromptTemplate.from_messages([
 chain = prompt | llm | StrOutputParser()
 
 # Passando o conteúdo HTML (como string) do objeto BeautifulSoup para o prompt
-resposta = chain.invoke({"html_conteudo": str(scripts_json)})
+resposta = chain.invoke({"html_conteudo": str(sopa_bonita)})
 
 # COMMAND ----------
 
@@ -142,7 +140,7 @@ df = rdd.toDF(schema)
 # COMMAND ----------
 
 # Caminho para a external location do diretório bronze
-bronze_path = f"/Volumes/nintendoworkspace/nintendoschema/bronze-vol/mercadolivre"
+bronze_path = f"/Volumes/nintendoworkspace/nintendoschema/bronze-vol/casasbahia"
 
 # Salva o DataFrame Spark no formato delta
 df.write.format("delta") \

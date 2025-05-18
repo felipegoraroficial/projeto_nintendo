@@ -14,60 +14,40 @@
 
 # COMMAND ----------
 
-from bs4 import BeautifulSoup
+# MAGIC %pip install openai langchain-openai langchain
+
+# COMMAND ----------
+
+import os
 import requests
-import sys
+from bs4 import BeautifulSoup
+import json
+import re
 import os
 from datetime import datetime
+from pyspark.dbutils import DBUtils
+from langchain_openai import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate
+from langchain.schema import StrOutputParser
+from pyspark.sql.types import StructType, StructField, StringType
 
-# COMMAND ----------
+# Inicializando dbutils
+dbutils = DBUtils(spark)
 
-# Obtém o caminho do diretório atual do notebook
-current_path = os.path.dirname(dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get())
-
-# COMMAND ----------
-
-# Verifica se o caminho atual contém a string "dev"
-if "dev" in current_path:
-    # Define o ambiente como "dev"
-    env = "dev"
-# Verifica se o caminho atual contém a string "prd"
-elif "prd" in current_path:
-    # Define o ambiente como "prd"
-    env = "prd"
-# Caso contrário, define o ambiente como "env não encontrado"
-else:
-    env = "env não encontrado"
-
-# COMMAND ----------
-
-# Adiciona o caminho do diretório 'meus_scripts_pyspark' ao sys.path
-# Isso permite que módulos Python localizados nesse diretório sejam importados
-# Ajusta o caminho do diretório para os primeiros 3 níveis
-current_dir = '/'.join(current_path.split('/')[:3])
-
-sys.path.append(f'/Workspace{current_dir}/meus_scripts_pyspark')
-
-# COMMAND ----------
-
-from create_unique_file import create_unique_file
-
-# COMMAND ----------
-
-# Caminho para o diretório de entrada
-inbound_path = f"/Volumes/nintendo_databricks/{env}/magalu-vol/inbound"
-
-# Lista todos os arquivos no diretório de entrada que terminam com ".txt"
-file_paths = [
-    f"{inbound_path}/{file.name}" for file in dbutils.fs.ls(inbound_path) if file.name.endswith(".txt")
-]
+ai_key = os.environ.get("OPENAI_API")
 
 # COMMAND ----------
 
 # Obtém a data atual no formato YYYY-MM-DD
 data_atual = datetime.now().strftime("%Y-%m-%d")
 
-# COMMAND ----------
+# Caminho para o diretório de entrada
+inbound_path = f"/Volumes/nintendoworkspace/nintendoschema/inbound-vol/magalu"
+
+# Lista todos os arquivos no diretório de entrada que terminam com ".html"
+file_paths = [
+    f"{inbound_path}{file.name}" for file in dbutils.fs.ls(inbound_path) if file.name.endswith(".html")
+]
 
 # Filtrando a lista com a data_atual 
 currrent_files_path = next((arquivo for arquivo in file_paths if data_atual in arquivo), None)
@@ -78,85 +58,92 @@ if currrent_files_path:  # Verifica se há um caminho de arquivo atual
 
     list_todos = []  # Inicializa uma lista vazia para armazenar os dados extraídos
 
-    df = spark.read.text(currrent_files_path)  # Lê o arquivo de texto no caminho atual como um DataFrame Spark
-    html_content = "\n".join(row.value for row in df.collect())  # Concatena o conteúdo das linhas do DataFrame em uma única string
+    # Lendo o conteúdo do arquivo
+    local_file_path = "/tmp/pagina_busca.html" # Caminho local temporário no driver node
+    dbutils.fs.cp(currrent_files_path, f"file:{local_file_path}")
+    with open(local_file_path, "r") as f:
+        html_content = f.read()
 
-    sopa_bonita = BeautifulSoup(html_content, 'html.parser')  # Analisa o conteúdo HTML usando BeautifulSoup
+    sopa_bonita = BeautifulSoup(html_content, 'html.parser')
 
-    list_links = sopa_bonita.find_all('a', {'data-testid': 'product-card-container'})  # Encontra todos os links de produtos
-    links = [link['href'] for link in list_links if 'href' in link.attrs]  # Extrai todos os hrefs dos links
+# COMMAND ----------
 
-    for link in links:  # Itera sobre cada link
+# Criar um agente LangChain para interagir com o DataFrame
+llm = ChatOpenAI(temperature=0.7, model="gpt-4o-mini", openai_api_key=ai_key)
 
-        link = 'https://www.magazineluiza.com.br' + link  # Concatena a URL base com o link do produto
+# COMMAND ----------
 
-        headers = {'user-agent': 'Mozilla/5.0'}  # Define o cabeçalho do agente de usuário para a requisição HTTP
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "Você é um especialista em extrair informações relevantes de conteúdo HTML. Analise o conteúdo fornecido e capture as informações solicitadas pelo usuário."),
+    ("human", "Por favor, analise o seguinte conteúdo HTML:\n\n{html_conteudo}\n\nE capture os dados no seguinte formato:\n\n```json\n{{\n  \"produtos\": [\n    {{\n      \"nome\": \"[nome do produto 1]\",\n      \"preco\": \"[preço do produto 1]\",\n      \"link\": \"[link do produto 1]\",\n      \"codigo\": \"[código do produto 1]\",\n      \"desconto\": \"[desconto do produto 1]\",\n      \"parcelamento\": \"[parcelamento do produto 1]\"\n    }},\n    {{\n      \"nome\": \"[nome do produto 2]\",\n      \"preco\": \"[preço do produto 2]\",\n      \"link\": \"[link do produto 2]\",\n      \"codigo\": \"[código do produto 2]\",\n      \"desconto\": \"[desconto do produto 2]\",\n      \"parcelamento\": \"[parcelamento do produto 2]\"\n    }},\n    ...\n  ]\n}}\n```\n\nCapture [todos os nomes de produtos, seus preços, links relacionados, códigos dos produtos, descontos e informações de parcelamento] e formate a saída seguindo rigorosamente a estrutura JSON fornecida. Certifique-se de que a lista de produtos esteja corretamente formatada. Caso não encontre o objeto solicitado, retorne como nulo para cada objeto."),
+])
 
-        resposta = requests.get(link, headers=headers)  # Faz uma requisição GET para a URL especificada com o cabeçalho
+# COMMAND ----------
 
-        sopa_bonita = BeautifulSoup(resposta.text, 'html.parser')  # Analisa o conteúdo HTML da resposta usando BeautifulSoup
+chain = prompt | llm | StrOutputParser()
 
-        if sopa_bonita.find('span', class_='sc-dcJsrY daMqkh'): # Verifica se há um elemento de codigo do produto
-            codigo = sopa_bonita.find('span', class_='sc-dcJsrY daMqkh').text  # Extrai o codigo do produto
-        elif sopa_bonita.find('span', class_='sc-iGgWBj eXbWIe'): # Verifica se há um elemento de codigo do produto
-            codigo = sopa_bonita.find('span', class_='sc-iGgWBj eXbWIe').text  # Extrai o codigo do produto
-        else:
-            codigo = "sem código"
+# Passando o conteúdo HTML (como string) do objeto BeautifulSoup para o prompt
+resposta = chain.invoke({"html_conteudo": str(sopa_bonita)})
 
-        titulo = sopa_bonita.find('h1', {'data-testid': 'heading-product-title'}).text  # Extrai o título do produto
+# COMMAND ----------
 
-        preco = sopa_bonita.find('p', {'data-testid': 'price-value'}) # Extrai o preço do produto
-        preco = preco.text if preco else "R$ 0,00" # Se não encontrado texto no elemento, retorne R$0,00
+match = re.search(r"\{(.*)\}", resposta, re.DOTALL)
+if match:
+    json_string = "{" + match.group(0) + "}" 
 
+    # Remove as chaves duplas, substituindo por chaves simples
+    json_string = json_string.replace('{{', '{').replace('}}', '}')
 
-        if sopa_bonita.find('span', class_='sc-fyVfxW bBlpKX'):  # Verifica se há um elemento de desconto
-            desconto = sopa_bonita.find('span', class_='sc-fyVfxW bBlpKX').text  # Extrai o valor do desconto
-        elif sopa_bonita.find('span', class_='sc-eHsDsR bYZWfg'):  # Verifica se há um elemento de desconto
-            desconto = sopa_bonita.find('span', class_='sc-eHsDsR bYZWfg').text  # Extrai o valor do desconto
-        else:
-            desconto = "sem desconto"  # Define o valor padrão para desconto
+    dados = json.loads(json_string)
 
-        moeda = preco[0] + preco[1]  # Extrai a moeda do preço
+    if 'produtos' in dados and isinstance(dados['produtos'], list):
+        for produto in dados['produtos']:
+            codigo = produto.get('codigo')
+            nome = produto.get('nome')
+            preco = produto.get('preco')
+            desconto = produto.get('desconto')
+            parcelamento = produto.get('parcelamento')
+            link = produto.get('link')
+            list_todos.append({
+                'codigo': codigo,
+                'nome': nome,
+                'preco': preco,
+                'desconto': desconto,
+                'parcelamento': parcelamento,
+                'link': link,
+                'data':data_atual
+            })
 
-        if sopa_bonita.find('p', class_='sc-dcJsrY bdQQwX sc-joQczN fWWRYL'):  # Verifica se há um elemento de parcelamento
-            parcelamento = sopa_bonita.find('p', class_='sc-dcJsrY bdQQwX sc-joQczN fWWRYL').text  # Extrai o valor do parcelamento
-        elif sopa_bonita.find('p', class_='sc-dcJsrY bdQQwX sc-kobALw yIiQA'):  # Verifica se há um elemento alternativo de parcelamento
-            parcelamento = sopa_bonita.find('p', class_='sc-dcJsrY bdQQwX sc-kobALw yIiQA').text  # Extrai o valor do parcelamento alternativo
-        elif sopa_bonita.find('p', class_='sc-iGgWBj idhlOX sc-SrznA hXFzWz'):  # Verifica se há um elemento alternativo de parcelamento
-            parcelamento = sopa_bonita.find('p', class_='sc-iGgWBj idhlOX sc-SrznA hXFzWz').text  # Extrai o valor do parcelamento alternativo
-        else:
-            parcelamento = "sem parcelamento"  # Define o valor padrão para parcelamento
-
-        list_todos.append({  # Adiciona os dados extraídos à lista
-            'codigo': codigo,
-            'titulo': titulo,
-            'moeda': moeda,
-            'preco_promo': preco,
-            'condition_promo': desconto,
-            'parcelado': parcelamento,
-            'link': link
-        })
 
 else:
-    # Imprime uma mensagem caso não exista arquivo extraído na data atual
-    print(f"Não existe arquivo extraído na data de {data_atual}")
+    print("Nenhuma estrutura JSON delimitada por chaves encontrada.")
 
 # COMMAND ----------
 
 # Cria um RDD a partir da lista de dicionários
 rdd = spark.sparkContext.parallelize(list_todos)
 
+# Define o schema do DataFrame
+schema = StructType([
+    StructField("codigo", StringType(), True),
+    StructField("nome", StringType(), True),
+    StructField("preco", StringType(), True),  
+    StructField("desconto", StringType(), True),  
+    StructField("parcelamento", StringType(), True), 
+    StructField("link", StringType(), True),
+    StructField("data", StringType(), True)
+])
+
 # Converte o RDD em um DataFrame
-df = rdd.toDF()
+df = rdd.toDF(schema)
 
 # COMMAND ----------
 
 # Caminho para a external location do diretório bronze
-bronze_path = f"/Volumes/nintendo_databricks/{env}/magalu-vol/bronze/{data_atual}"
+bronze_path = f"/Volumes/nintendoworkspace/nintendoschema/bronze-vol/magalu"
 
-# Salva o DataFrame Spark no arquivo Parquet
-df.coalesce(1).write.mode('overwrite').parquet(bronze_path)
-
-# COMMAND ----------
-
-create_unique_file(bronze_path, 'parquet')
+# Salva o DataFrame Spark no formato delta
+df.write.format("delta") \
+    .partitionBy("data") \
+    .mode("append") \
+    .save(bronze_path)

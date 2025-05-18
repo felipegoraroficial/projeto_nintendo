@@ -13,190 +13,320 @@
 
 # COMMAND ----------
 
-from pyspark.sql.types import StructType, StructField, StringType, DoubleType, DateType
+from pyspark.sql.types import StructType, StructField, StringType, DoubleType, DateType, LongType
+from pyspark.sql.functions import concat_ws, col, regexp_replace, when, lit, desc, max, to_date, regexp_extract
+from pyspark.sql import SparkSession
+import re
 import os
-import json
-import sys
-
-# COMMAND ----------
-
-# Obtém o caminho do diretório atual do notebook
-current_path = os.path.dirname(dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get())
-
-# COMMAND ----------
-
-# Verifica se o caminho atual contém a string "dev"
-if "dev" in current_path:
-    # Define o ambiente como "dev"
-    env = "dev"
-# Verifica se o caminho atual contém a string "prd"
-elif "prd" in current_path:
-    # Define o ambiente como "prd"
-    env = "prd"
-# Caso contrário, define o ambiente como "env não encontrado"
-else:
-    env = "env não encontrado"
-
-# COMMAND ----------
-
-# Adiciona o caminho do diretório 'meus_scripts_pyspark' ao sys.path
-# Isso permite que módulos Python localizados nesse diretório sejam importados
-# Ajusta o caminho do diretório para os primeiros 3 níveis
-current_dir = '/'.join(current_path.split('/')[:3])
-
-sys.path.append(f'/Workspace{current_dir}/meus_scripts_pyspark')
-
-# COMMAND ----------
-
-from organize_files import organize_files
-from change_null_string import change_null_string
-from change_null_numeric import change_null_numeric
-from union_df import union_df
-from remove_extra_spaces import remove_extra_spaces
-from lower_string_column import lower_string_column
-from convert_currency_column import convert_currency_column
-from type_monetary import type_monetary
-from replace_characters import replace_characters
-from extract_characters import extract_characters
-from filter_like import filter_like
-from extract_memory import extract_memory
-from condition_like import condition_like
-from concat_columns import concat_columns
-
-# COMMAND ----------
-
-# Adiciona o caminho do diretório 'meus_scripts_pytest' ao sys.path
-# Isso permite que módulos Python localizados nesse diretório sejam importados
-# Diretorio referente a funções de pytest
-sys.path.append(f'/Workspace{current_dir}/meus_scripts_pytest')
-
-# COMMAND ----------
-
-from df_not_empty import df_not_empty
-from schema_equals_df_schema import schema_equals_df_schema
 
 # COMMAND ----------
 
 # Definindo o esquema para o DataFrame
 schema = StructType([
-    StructField("id", StringType(), True),              # ID do produto
-    StructField("codigo", StringType(), True),          # Codigo do produto
-    StructField("titulo", StringType(), True),          # Título do produto
-    StructField("moeda", StringType(), True),           # Moeda utilizada na transação
-    StructField("condition_promo", StringType(), True), # Condição promocional do produto
-    StructField("preco_promo", DoubleType(), True),      # Preço promocional do produto
+    StructField("id", StringType(), True),               # ID do produto
+    StructField("codigo", StringType(), True),           # Codigo do produto
+    StructField("nome", StringType(), True),             # Nome do produto
+    StructField("moeda", StringType(), True),            # Moeda utilizada na transação
+    StructField("desconto", StringType(), True),         # Condição promocional do produto
+    StructField("preco", DoubleType(), True),            # Preço do produto
     StructField("parcelado", StringType(), True),        # Valor parcelado do produto
-    StructField("link", StringType(), True),          # URL do link do produto
-    StructField("origem", StringType(), True),          # Origem da extração do produto
+    StructField("link", StringType(), True),             # URL do link do produto
     StructField("file_date", DateType(), True),          # Data do arquivo
-    StructField("status", StringType(), True),          # Status do registro
+    StructField("status", StringType(), True),           # Status do registro
 ])
 
 # COMMAND ----------
 
-# Caminho para a external location do diretório bronze em magalu
-bronze_path = f'/Volumes/nintendo_databricks/{env}/magalu-vol/bronze/'
+def last_partition_delta(nome_tabela, coluna_particao):
 
-# Lendo arquivos PARQUET do diretório bronze
-mg = spark.read.parquet(bronze_path)
+    spark = SparkSession.builder.getOrCreate()
+    
+    try:
+        df = spark.read.format("delta").load(nome_tabela)
+    except Exception as e:
+        print(f"Erro ao acessar a tabela '{nome_tabela}': {e}")
+        return spark.createDataFrame([], schema=df.schema if 'df' in locals() else [])
 
-mg = organize_files(mg,'codigo')
+    ultima_particao_df = df.select(max(coluna_particao).alias("ultima_particao"))
+    ultima_particao = ultima_particao_df.first()["ultima_particao"] if ultima_particao_df.first() else None
 
-# COMMAND ----------
+    if ultima_particao is not None:
+        filtro = f"{coluna_particao} = '{ultima_particao}'"
+        df_ultima_particao = df.where(filtro)
+        print(f"Tabela '{nome_tabela}' filtrada pela última partição: {ultima_particao}")
 
-df_not_empty(mg)
+        qtd = df_ultima_particao.count()
+
+        assert qtd > 0, f"A última partição '{ultima_particao}' da tabela '{nome_tabela}' está vazia."
+        
+        print(f"Leitura da tabela '{nome_tabela}' carregada com sucesso. Número de linhas: {qtd}")
+
+        return df_ultima_particao
+    else:
+        print(f"Não foram encontradas partições na tabela '{nome_tabela}'.")
+        return spark.createDataFrame([], schema=df.schema)
 
 # COMMAND ----------
 
 # Caminho para a external location do diretório bronze em mercadolivre
-bronze_path = f'/Volumes/nintendo_databricks/{env}/mercadolivre-vol/bronze/'
+bronze_path = f"/Volumes/nintendoworkspace/nintendoschema/bronze-vol/mercadolivre"
 
-# Lendo arquivos PARQUET do diretório bronze
-ml = spark.read.parquet(bronze_path)
-
-ml = organize_files(ml,'codigo')
+# Lendo arquivo Delta do diretório bronze pela ultima partição
+ml = last_partition_delta(bronze_path, "data")
 
 # COMMAND ----------
 
-df_not_empty(ml)
+# Caminho para a external location do diretório bronze em mercadolivre
+bronze_path = f"/Volumes/nintendoworkspace/nintendoschema/bronze-vol/kabum"
+
+# Lendo arquivo Delta do diretório bronze pela ultima partição
+kb = last_partition_delta(bronze_path, "data")
 
 # COMMAND ----------
 
-df = union_df(ml, mg)
+# Caminho para a external location do diretório bronze em mercadolivre
+bronze_path = f"/Volumes/nintendoworkspace/nintendoschema/bronze-vol/magalu"
+
+# Lendo arquivo Delta do diretório bronze pela ultima partição
+mg = last_partition_delta(bronze_path, "data")
 
 # COMMAND ----------
 
-df = type_monetary(df, "preco_promo")
+# Caminho para a external location do diretório bronze em mercadolivre
+bronze_path = f"/Volumes/nintendoworkspace/nintendoschema/bronze-vol/amazon"
+
+# Lendo arquivo Delta do diretório bronze pela ultima partição
+am = last_partition_delta(bronze_path, "data")
 
 # COMMAND ----------
 
-df = replace_characters(df, "condition_promo", r"[()]", "")
-df = replace_characters(df, "condition_promo", "de desconto no pix", "OFF")
-df = replace_characters(df, "codigo", "Código ", "")
+# Caminho para a external location do diretório bronze em mercadolivre
+bronze_path = f"/Volumes/nintendoworkspace/nintendoschema/bronze-vol/casasbahia"
+
+# Lendo arquivo Delta do diretório bronze pela ultima partição
+ca = last_partition_delta(bronze_path, "data")
 
 # COMMAND ----------
 
-df = convert_currency_column(df, 'preco_promo')
+def union_dfs_list(dataframe_list):
+
+    print("Verificando se lista de dataframes está vazia")
+    if not dataframe_list:
+        return None
+
+    print("Verificando se lista de dataframes contém apenas 1 df")
+    if len(dataframe_list) == 1:
+        return dataframe_list[0]
+    
+    print(f"Quantidade de dataframes na lista: {len(dataframe_list)}")
+
+    print("Iniciando processo para unir dataframes")
+    df_final = dataframe_list[0]
+    for i in range(1, len(dataframe_list)):
+        df_final = df_final.union(dataframe_list[i])
+
+    linhas_final = df_final.count()
+
+    print(f"União entre os dataframes realizado, quantidade de linhas: {linhas_final}")
+        
+    total_linhas = sum(df.count() for df in dataframe_list)
+
+    assert total_linhas == linhas_final, f"União dos datraframes falhou!"
+
+    return df_final
 
 # COMMAND ----------
 
-df = concat_columns(df, "codigo", "file_date", "id")
+# Cria uma lista com os DataFrames
+lista_de_dfs = [ml, kb, mg, ca, am]
+
+# Chama a função para unir os DataFrames
+df = union_dfs_list(lista_de_dfs)
 
 # COMMAND ----------
 
-# Seleciona as colunas específicas do DataFrame para manter no resultado final
-df = df.select('id','codigo','titulo', 'moeda', 'condition_promo', 'preco_promo', 'parcelado', 'link', 'file_name', 'file_date', 'status')
+    def filter_not_null_value(df, coluna):
+
+        dffiltered = df.filter(col(coluna).isNotNull())
+
+        qtddotal = df.count()
+        qtdnotnull = df.filter(col(coluna).isNotNull()).count()
+        qtdnull = df.filter(col(coluna).isNull()).count()
+
+        print(f"dataframe filtrado, numero de linhas: {qtdnotnull}")
+
+        assert qtddotal == (qtdnull + qtdnotnull)
+
+        print(f"Filtro ralizado com sucesso")
+        print(f"df origem {qtddotal} linhas = df filtrado {qtdnotnull} linhas + df não filtrado {qtdnull} linhas")
+
+        return dffiltered
 
 # COMMAND ----------
 
-# Cria um novo DataFrame com base no RDD do DataFrame existente e aplica o esquema especificado
-df = spark.createDataFrame(df.rdd, schema)
+df = filter_not_null_value(df, "codigo")
 
 # COMMAND ----------
 
-schema_equals_df_schema(df,schema)
+def define_data_columns(df):
+
+    formato_regex = r"^\d{4}-\d{2}-\d{2}$"  # Regex para formato 'YYYY-MM-DD'
+
+    colunas_string = [coluna for coluna, dtype in df.dtypes if dtype == "string"]  
+
+    print(f"Colunas strings identificadas no dataframes: {colunas_string}")
+
+    for coluna in colunas_string:
+        df_sem_nulos = df.filter(col(coluna).isNotNull())
+
+        match_count = df_sem_nulos.filter(regexp_extract(col(coluna), formato_regex, 0) != "").count()
+        total_count = df_sem_nulos.count()
+
+        if match_count == total_count:  
+
+            print(f"Coluna com padrões de data para a conversão: {coluna}")
+
+            df = df.withColumn(coluna, to_date(col(coluna), "yyyy-MM-dd"))
+
+            novo_tipo = dict(df.dtypes)[coluna]
+            assert novo_tipo == "date", f"Erro: A coluna {coluna} não foi convertida corretamente! Tipo atual: {novo_tipo}"
+
+            print(f"Coluna {coluna} convertida com sucesso, tipo identificado = {novo_tipo}")
+
+    return df
 
 # COMMAND ----------
 
-# Função para remover espaços em branco extras de todas as colunas de string
-df = remove_extra_spaces(df)
-
+df = define_data_columns(df)
 
 # COMMAND ----------
 
-# Converter valores nulos de colunas que são do tipo double para 0
-df = change_null_numeric(df, 'double')
+def define_numeric_columns(df):
+    # Regex para identificar valores percentuais e monetários
+    regex_percentual = re.compile(r"^\d+%$")
+    regex_monetario = re.compile(r"^R\$?\s?\d{1,3}(\.\d{3})*(,\d{2})?$")
+
+    # Obtendo colunas de tipo string
+    colunas_string = [coluna for coluna, dtype in df.dtypes if dtype == "string"]
+    colunas_percentuais = []
+    colunas_monetarias = []
+
+    # Identifica colunas com valores percentuais e monetários
+    for coluna in colunas_string:
+        df_sem_nulos = df.filter(col(coluna).isNotNull())
+        valores_amostra = df_sem_nulos.select(coluna).rdd.map(lambda row: row[0]).collect()
+
+        if any(bool(regex_percentual.match(str(valor))) for valor in valores_amostra):
+            print(f"A coluna '{coluna}' contém valores no formato percentual.")
+            colunas_percentuais.append(coluna)
+
+        if any(bool(regex_monetario.match(str(valor))) for valor in valores_amostra):
+            print(f"A coluna '{coluna}' contém valores no formato monetário.")
+            colunas_monetarias.append(coluna)
+
+    # Aplica a conversão para valores percentuais
+    for coluna in colunas_percentuais:
+        df = df.withColumn(
+            coluna,
+            when(
+                col(coluna).rlike("^\d+%$"),
+                (regexp_replace(col(coluna), "%", "").cast(DoubleType()) / 100)
+            ).otherwise(col(coluna))
+        ).withColumn(coluna, col(coluna).cast(DoubleType()))
+
+        print(f"Coluna {coluna} convertida com sucesso para tipo 'double'.")
+
+    # Aplica a conversão para valores monetários
+    for coluna in colunas_monetarias:
+        df = df.withColumn(
+            coluna,
+            when(
+                col(coluna).rlike("^R\\$?\\s?\\d{1,3}(\\.\\d{3})*(,\\d{2})?$"),
+                regexp_replace(
+                    regexp_replace(
+                        regexp_replace(col(coluna), "R\\$", ""), 
+                        "\\.", "" 
+                    ),
+                    ",", "."  
+                ).cast(DoubleType())
+            ).otherwise(col(coluna))
+        ).withColumn(coluna, col(coluna).cast(DoubleType()))
+
+        print(f"Coluna {coluna} convertida com sucesso para tipo 'double'.")
+
+    return df
 
 # COMMAND ----------
 
-# Converte valores nulos de colunas que são do tipo string para -
-df = change_null_string(df)
+df = silver_data.define_numeric_columns(df)
 
 # COMMAND ----------
 
-df = extract_characters(df,'origem','origem',rf'dbfs:/Volumes/nintendo_databricks/{env}/(.*?)-vol/bronze/')
+def replace_nulls_with_zero(df):
+    # Identificar colunas numéricas (inteiras e decimais)
+    numeric_cols = [field.name for field in df.schema.fields if isinstance(field.dataType, (IntegerType, FloatType, LongType, DoubleType))]
+
+    print(f"Colunas numéricas identificadas: {numeric_cols}")
+
+    # Contar valores nulos antes da transformação
+    null_counts_before = df.select([count(when(col(c).isNull(), c)).alias(c) for c in numeric_cols]).collect()[0].asDict()
+    print(f"Valores nulos antes da transformação: {null_counts_before}")
+
+    # Substituir valores nulos por 0 nas colunas numéricas
+    for col_name in numeric_cols:
+        df = df.withColumn(col_name, when(col(col_name).isNull(), 0).otherwise(col(col_name)))
+        print(f"Valor nulo na coluna {col_name} alterado para 0")
+
+    # Contar valores nulos depois da transformação
+    null_counts_after = df.select([count(when(col(c).isNull(), c)).alias(c) for c in numeric_cols]).collect()[0].asDict()
+    print(f"Valores nulos depois da transformação: {null_counts_after}")
+
+    # Verificar se todas as colunas tiveram seus valores nulos substituídos
+    for col_name in numeric_cols:
+        if null_counts_after[col_name] == 0:
+            print(f"✅ Coluna {col_name} foi corretamente preenchida.")
+        else:
+            print(f"⚠️ Coluna {col_name} ainda contém valores nulos!")
+
+    return df
 
 # COMMAND ----------
 
-df = filter_like(df,"titulo","(?i)^console.*switch")
+df = silver_data.replace_nulls_with_zero(df)
 
 # COMMAND ----------
 
-df = extract_memory(df, 'titulo')
+def replace_nulls_with_hyphen(df):
+    # Identificar colunas numéricas (inteiras e decimais)
+    string_cols = [field.name for field in df.schema.fields if isinstance(field.dataType, (StringType))]
 
+    print(f"Colunas numéricas identificadas: {string_cols}")
+
+    # Contar valores nulos antes da transformação
+    null_counts_before = df.select([count(when(col(c).isNull(), c)).alias(c) for c in string_cols]).collect()[0].asDict()
+    print(f"Valores nulos antes da transformação: {null_counts_before}")
+
+    # Substituir valores nulos por 0 nas colunas numéricas
+    for col_name in string_cols:
+        df = df.withColumn(col_name, when(col(col_name).isNull(), '-').otherwise(col(col_name)))
+        print(f"Valor nulo na coluna {col_name} alterado para '-'")
+
+    # Contar valores nulos depois da transformação
+    null_counts_after = df.select([count(when(col(c).isNull(), c)).alias(c) for c in string_cols]).collect()[0].asDict()
+    print(f"Valores nulos depois da transformação: {null_counts_after}")
+
+    # Verificar se todas as colunas tiveram seus valores nulos substituídos
+    for col_name in string_cols:
+        if null_counts_after[col_name] == 0:
+            print(f"✅ Coluna {col_name} foi corretamente preenchida.")
+        else:
+            print(f"⚠️ Coluna {col_name} ainda contém valores nulos!")
+
+    return df
 
 # COMMAND ----------
 
-df = condition_like(df, 'oled', 'titulo', '(?i)Oled')
-df = condition_like(df, 'lite', 'titulo', '(?i)Lite')
-
-# COMMAND ----------
-
-df = lower_string_column(df, 'memoria')
-
-# COMMAND ----------
-
-df_not_empty(df)
+df = silver_data.replace_nulls_with_hyphen(df)
 
 # COMMAND ----------
 
