@@ -2,7 +2,7 @@
 
 ## Objetivo:
 
-O objetivo deste projeto é a captura de dados referentes a anúncios de vendas em e-commerce/marketplaces, com foco específico nos consoles Nintendo Switch. Os dados capturados são tratados e armazenados em um ambiente na nuvem, permitindo sua integração com ferramentas de visualização de dados (DataViz). Isso possibilita a geração de gráficos e insights para identificar os melhores preços e as principais características dos consoles em diferentes marketplaces.
+O objetivo deste projeto é a captura de dados quase em tempo real referentes a anúncios de vendas em e-commerce/marketplaces de forma escalável, com foco específico nos consoles Nintendo Switch. Os dados capturados são tratados e armazenados em um ambiente na nuvem, permitindo sua integração com ferramentas de visualização de dados (DataViz). Isso possibilita a geração de gráficos e insights para identificar os melhores preços e as principais características dos consoles em diferentes marketplaces.
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/44df77ae-63ca-4d69-8c58-7820cdb98b5a" alt="Desenho Técnico">
@@ -14,9 +14,11 @@ O objetivo deste projeto é a captura de dados referentes a anúncios de vendas 
 
 ## Introdução:
 
-O projeto foi desenvolvido utilizando as linguagens de programação Python e PySpark no ambiente em nuvem do Azure Databricks. Para a normalização e modelagem de dados, foi utilizado SQL na plataforma dbt Cloud.
-
-A arquitetura do projeto envolve recursos da Azure integrados ao dbt Cloud. Usando o Databricks como plataforma do processo de ELT, os dados extraídos da web são armazenados em um diretório inbound dentro de um contêiner da conta de armazenamento da Azure com a data de extração. Utilizamos o BeautifulSoup para identificar elementos e carregar informações na stage bronze. Com PySpark, carregamos todos os dados da stage bronze e passamos por uma limpeza e transformação de dados até o carregamento dos dados tratados em uma stage silver. Por fim, os dados são processados e carregados em uma tabela externa que está particionada pela data de extração.
+O projeto foi desenvolvido utilizando as linguagens de programação Python e PySpark na paltaforma de nuvem da Azure. Para a normalização e modelagem de dados, foi utilizado SQL na plataforma dbt Cloud.
+Usando Azure Functions para realizar requests em quase tempo real e armazenar o conteuúdo html no diretorio inbound da conta de armazenamento da Azure.
+Com Azure Databricks como plataforma do processo de ELT, foi utilizando a linguegam Pyspark apra lidar com grandes volume de dados na stage silver e gold
+Para tornar o projeto escalavél, utilizamos a biblioteca langchain para utilização de IA para captura de contéudos html em cada requisição feita pelo app Azure Functions.
+Por fim, os dados são processados e carregados em uma tabela externa com o proposito de facilitar a moigração de dados para outra plataforma, caso necessário.
 
 No dbt, é feita a conexão do catálogo do Databricks e são criadas tables de normalização de dados e views de métricas para análise de dados.
 
@@ -24,7 +26,7 @@ Todo o processo ocorre no workflow do Databricks de forma agendada, com alertas 
 
 No final do workflow é gerado dados referente a log do processo e lienage de tabelas que são armazenado em uma tabela no catalogo do databricks que servirão de fonte de dados ao dashboard de monitoramento do workspace.
 
-Os scripts são versionados e separados por ambientes de desenvolvimento (dev) e produção (prd).
+Os scripts são versionados e podem ser separados por ambientes como por exemplo: desenvolvimento (dev) e produção (prd).
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/74d30a1c-222a-4576-bb07-a0a2ecaa7be9" alt="Desenho Técnico">
@@ -37,21 +39,21 @@ Os scripts são versionados e separados por ambientes de desenvolvimento (dev) e
 
 ## Meta:
 
-1. **Captação e Armazenamento de Dados Brutos**:
-    - **Objetivo**: Capturar dados brutos diários de sites de e-commerce e marketplaces para análise posterior.
-    - **Benefício**: Permite a reprocessamento dos dados caso os sites mudem, preservando a integridade dos dados históricos.
+1. **Captação de Dados Brutos em Quase Tempo Real**:
+    - **Objetivo**: Criar uma aplicação no Azure Functions para capturar dados brutos diários de sites de e-commerce e marketplaces para análise posterior.
+    - **Benefício**: Permite a captura de dados em quase tempo real com menor custo.
 
-2. **Captação e Armazenamento de Elemento HTML**:
-    - **Objetivo**: Extrair informações essenciais dos arquivos HTML, como links, títulos, preços, promoções, parcelamentos e imagens dos produtos.
-    - **Benefício**: Flexibilidade para ajustar o processamento conforme necessário, sem a perda de dados brutos.
+2. **Escalando Captura de Elemento HTML**:
+    - **Objetivo**: Utilizar modelos de IA para extrair informações essenciais dos arquivos HTML, como links, títulos, preços, promoções, parcelamentos e imagens dos produtos.
+    - **Benefício**: Flexibilidade para processo prdotivo com menor probabilidade para correções de bugs.
 
 3. **Processamento e Escalabilidade para BigData**:
     - **Objetivo**: Aplicar processamento Spark ao conjuntos de dados na etapa de transformação.
     - **Benefício**: Melhoria da qualidade dos dados, com correção de dados e padronização do mesmo e, além disso, o processamento de dados escalonáveis e suportando big data.
 
-4. **Armazenamento Seguro dos Dados**:
-    - **Objetivo**: Armazenar dados tratados em uma external table no Databricks, garantindo a segurança e integridade dos dados.
-    - **Benefício**: Proteção dos dados em armazenamento externo, prevenindo perdas ou alterações equivocadas no dado.
+4. **Independência entre Plataformas**:
+    - **Objetivo**: Armazenar dados tratados em uma external table.
+    - **Benefício**: Garantir a flexibilidade para migrações de dados para outras plataformas.
 
 5. **Separação de Plataforma entre Times**:
     - **Objetivo**: Separação de processos entre engenheiros de dados (Plataforma Databricks) e analistas dados (Plataforma dbt).
