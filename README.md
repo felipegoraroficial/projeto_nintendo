@@ -209,10 +209,24 @@ https://learn.microsoft.com/en-us/azure/databricks/data-governance/unity-catalog
 
 ### 5.Criação de um Acess Conector
 
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/be35dabc-4ecf-4b86-bc1b-544c3b719fa1" alt="access-conector">
+</div>
+
+<p align="left">
+</p>
+
 - Crie um Acess Conector com a mesma região e grupo de recurso do projeto.
 - Atribua a função de Colaborador de Dados do Storage Blob ao acess conector.
 - Criação de uma credencial externa no workspace do azure databricks.
 - Criação de dois external location para os container dev e prd (necessário para a criação da external table e leituras e gravações de dados).
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/7314c14e-a878-41a3-a4de-2d63fb470bc0" alt="config-access-conector">
+</div>
+
+<p align="left">
+</p>
   
 ### 6.Conexão entre dbt e databricks
 
