@@ -120,6 +120,14 @@ Com o Azure Databricks criado sem nenhuma particularidade específica, basta ace
 
 - Importe o reseguinte repositório em sua workspace:
   https://github.com/felipegoraroficial/projeto_nintendo.git
+
+  <div align="center">
+  <img src="https://github.com/user-attachments/assets/2e0668da-a588-473e-af56-1864db730d82" alt="Workspace">
+  <p><b>Workspace</b></p>
+</div>
+
+<p align="left">
+</p>
   
 
 - Criação da external table no cátalogo.
