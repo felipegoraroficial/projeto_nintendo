@@ -118,32 +118,11 @@ Com o Azure Databricks criado sem nenhuma particularidade específica, basta ace
 <p align="left">
 </p>
 
-- Criação de schemas Dev e Prd no Catálogo do Databricks para separar os dados em ambientes.
-
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/0d2f82cd-e585-4161-a853-2ac4396dc037" alt="catalogo databricks">
-  <p><b>Estrutura do Catalogo do Projeto</b></p>
-</div>
-
-<p align="left">
-</p>
-
-- No espaço de trabalho, crie duas pastas, dev e prd, para separar os códigos em cada branch.
-- Importe os reseguintes repositórios para cada pasta com suas respectivas branches:
-  https://github.com/felipegoraroficial/projeto_nintendo.git (o repositório do projeto)
-  https://github.com/felipegoraroficial/meus_scripts_pyspark.git (o repositório referente a funções pypark para tratativas de dados do projeto)
-  https://github.com/felipegoraroficial/meus_scripts_pytest.git (o repositório referente a testes de dados do projeto)
-
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/68fc0f43-25e4-4d7a-979c-9b49ccb5b038" alt="workspace databricks">
-  <p><b>Estrutura do Workspace do Projeto</b></p>
-</div>
-
-<p align="left">
-</p>
+- Importe o reseguinte repositório em sua workspace:
+  https://github.com/felipegoraroficial/projeto_nintendo.git
   
-- Criação de uma credencial externa no cálogo.
-- Criação de duas external location para os container dev e prd (necessário para a criação da external table e volumes).
+
+- Criação da external table no cátalogo.
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/87fa2d19-d802-4f03-befc-940b321fbc24" alt="external table gold">
@@ -153,7 +132,7 @@ Com o Azure Databricks criado sem nenhuma particularidade específica, basta ace
 <p align="left">
 </p>
 
-- Criação de volumes, em ambos schmas dev e prd, e para cada hierarquia medalhão mencionada na etapa acima.
+- Criação de volumes  no cátalogo.
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/455722a8-8466-4e08-9e8c-6f86377bd2e7" alt="volumes databricks">
