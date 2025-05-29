@@ -15,6 +15,8 @@ app = func.FunctionApp()
 
 @app.timer_trigger(schedule="0 */10 * * * *", arg_name="myTimer", run_on_startup=False,
               use_monitor=False) 
+
+
 def request_web(myTimer: func.TimerRequest) -> None:
     if myTimer.past_due:
         logging.info('The timer is past due!')
@@ -103,15 +105,7 @@ def request_web(myTimer: func.TimerRequest) -> None:
 
         with producer:
             event_data_batch = producer.create_batch()
-            event_data_batch.add(EventData(list_todos))
+            event_data_batch.add(EventData(json.dumps(list_todos)))
             producer.send_batch(event_data_batch)
 
         logging.info(f"Mensagem enviada com sucesso para o Event Hub '{eventhub_name}'!")
-
-    filetext = get_html(url)
-
-
-    list_todos = get_content(filetext)
-
-
-    #send_producer(list_todos)
