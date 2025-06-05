@@ -38,13 +38,18 @@ def request_web(myTimer: func.TimerRequest) -> None:
         'Connection': 'keep-alive'
         }
         
-        resposta = requests.get(url, headers=headers)
-
-        filetext = resposta.text
-
-        return filetext
+        try:
+            resposta = requests.get(url, headers=headers)
+            resposta.raise_for_status()
+            return resposta.text
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Erro ao obter HTML da URL: {e}")
+            return None
 
     def get_content(filetext):
+
+        if not filetext:
+            return []
 
         sopa_bonita = BeautifulSoup(filetext, 'html.parser')
 
@@ -65,7 +70,11 @@ def request_web(myTimer: func.TimerRequest) -> None:
 
             json_string = json_string.replace('{{', '{').replace('}}', '}')
 
-            dados = json.loads(json_string)
+            try:
+                dados = json.loads(json_string)
+            except json.JSONDecodeError as e:
+                logging.error(f"Erro ao decodificar JSON: {e}, string JSON: {json_string}")
+                return []
 
             list_todos = []
 
@@ -89,7 +98,10 @@ def request_web(myTimer: func.TimerRequest) -> None:
                         'data':data_atual
                     })
 
-        return list_todos
+            return list_todos
+        else:
+            logging.warning("Nenhum JSON encontrado na resposta da LLM.")
+            return []
             
     def send_producer(list_todos):
 
@@ -98,14 +110,29 @@ def request_web(myTimer: func.TimerRequest) -> None:
             return
 
         logging.info(f"Conectando ao Event Hub '{eventhub_name}'...")
-        producer = EventHubProducerClient.from_connection_string(
-            conn_str=eventhub_connection_string,
-            eventhub_name=eventhub_name
-        )
+        try:
+            producer = EventHubProducerClient.from_connection_string(
+                conn_str=eventhub_connection_string,
+                eventhub_name=eventhub_name
+            )
 
-        with producer:
-            event_data_batch = producer.create_batch()
-            event_data_batch.add(EventData(json.dumps(list_todos)))
-            producer.send_batch(event_data_batch)
+            with producer:
+                for produto in list_todos: # Envia cada produto individualmente
+                    try:
+                        event_data_batch = producer.create_batch()
+                        event_data_batch.add(EventData(json.dumps(produto)))
+                        producer.send_batch(event_data_batch)
+                        logging.info(f"Mensagem enviada para Event Hub: {json.dumps(produto)}")
+                    except Exception as e:
+                        logging.error(f"Erro ao enviar mensagem para o Event Hub: {e}, dados: {produto}")
 
-        logging.info(f"Mensagem enviada com sucesso para o Event Hub '{eventhub_name}'!")
+            logging.info(f"Todas as mensagens foram enviadas com sucesso para o Event Hub '{eventhub_name}'!")
+
+        except Exception as e:
+            logging.error(f"Erro ao conectar ou enviar para o Event Hub: {e}")
+
+    filetext = get_html(url)
+    if filetext:
+        list_todos = get_content(filetext)
+        if list_todos:
+            send_producer(list_todos)

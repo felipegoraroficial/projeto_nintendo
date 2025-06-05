@@ -57,8 +57,8 @@ resource "azurerm_service_plan" "srvplan" {
 
 }
 
-resource "azurerm_linux_function_app" "funcapp" {
-  name                       = "azfnintendo"
+resource "azurerm_linux_function_app" "funcappcons" {
+  name                       = "appnintendo"
   location                   = azurerm_resource_group.rgroup.location
   resource_group_name        = azurerm_resource_group.rgroup.name
   storage_account_name       = azurerm_storage_account.stracc.name
@@ -98,7 +98,7 @@ resource "azurerm_databricks_workspace" "databricks_workspace" {
   name                        = "nintendodatabricks-workspace"
   resource_group_name         = azurerm_resource_group.rgroup.name
   location                    = azurerm_resource_group.rgroup.location
-  sku                         = "premium"
+  sku                         = "trial"
   managed_resource_group_name = "nintendodatabricks-workspace-rg"
 }
 
