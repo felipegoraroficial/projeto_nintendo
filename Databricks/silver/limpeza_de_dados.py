@@ -1,20 +1,6 @@
 # Databricks notebook source
-# MAGIC %md
-# MAGIC # Objetivo do Notebook
-# MAGIC  Este notebook tem como objetivo processar e analisar dados relacionados ao projeto Nintendo.
-# MAGIC  Ele carrega um arquivo de configuração para definir o ambiente de execução e utiliza bibliotecas do PySpark para manipulação e transformação dos dados.
-# MAGIC
-# MAGIC  O notebook está dividido em várias células, cada uma com uma função específica:
-# MAGIC  1. Importação das bibliotecas necessárias.
-# MAGIC  2. Obtém o caminho do notebook para identificar palavras referente ao ambiente e define a env em questão..
-# MAGIC  3. Leitura e processamento dos dados.
-# MAGIC  4. Transformações e limpeza dos dados.
-# MAGIC  5. Carregamento dos dados em outra camada da external lcoation no storageaccount da azure.
-
-# COMMAND ----------
-
-from pyspark.sql.types import StructType, StructField, StringType, DoubleType, DateType, LongType
-from pyspark.sql.functions import concat_ws, col, regexp_replace, when, lit, desc, max, to_date, regexp_extract
+from pyspark.sql.types import StructType, StructField, StringType, DoubleType, DateType, LongType 
+from pyspark.sql.functions import concat_ws, col, regexp_replace, when, lit, desc, max, to_date, regexp_extract, count
 from pyspark.sql import SparkSession
 import re
 import os
@@ -69,42 +55,12 @@ def last_partition_delta(nome_tabela, coluna_particao):
 # COMMAND ----------
 
 # Caminho para a external location do diretório bronze em mercadolivre
-bronze_path = f"/Volumes/nintendoworkspace/nintendoschema/bronze-vol/mercadolivre"
+bronze_path = f"/Volumes/nintendodatabricks_workspace_122994842671072/nintendo/bronze"
 
 # Lendo arquivo Delta do diretório bronze pela ultima partição
-ml = last_partition_delta(bronze_path, "data")
-
-# COMMAND ----------
-
-# Caminho para a external location do diretório bronze em mercadolivre
-bronze_path = f"/Volumes/nintendoworkspace/nintendoschema/bronze-vol/kabum"
-
+df1 = last_partition_delta(bronze_path, "data")
 # Lendo arquivo Delta do diretório bronze pela ultima partição
-kb = last_partition_delta(bronze_path, "data")
-
-# COMMAND ----------
-
-# Caminho para a external location do diretório bronze em mercadolivre
-bronze_path = f"/Volumes/nintendoworkspace/nintendoschema/bronze-vol/magalu"
-
-# Lendo arquivo Delta do diretório bronze pela ultima partição
-mg = last_partition_delta(bronze_path, "data")
-
-# COMMAND ----------
-
-# Caminho para a external location do diretório bronze em mercadolivre
-bronze_path = f"/Volumes/nintendoworkspace/nintendoschema/bronze-vol/amazon"
-
-# Lendo arquivo Delta do diretório bronze pela ultima partição
-am = last_partition_delta(bronze_path, "data")
-
-# COMMAND ----------
-
-# Caminho para a external location do diretório bronze em mercadolivre
-bronze_path = f"/Volumes/nintendoworkspace/nintendoschema/bronze-vol/casasbahia"
-
-# Lendo arquivo Delta do diretório bronze pela ultima partição
-ca = last_partition_delta(bronze_path, "data")
+df2 = last_partition_delta(bronze_path, "data")
 
 # COMMAND ----------
 
@@ -138,29 +94,29 @@ def union_dfs_list(dataframe_list):
 # COMMAND ----------
 
 # Cria uma lista com os DataFrames
-lista_de_dfs = [ml, kb, mg, ca, am]
+lista_de_dfs = [df1,df2]
 
 # Chama a função para unir os DataFrames
 df = union_dfs_list(lista_de_dfs)
 
 # COMMAND ----------
 
-    def filter_not_null_value(df, coluna):
+def filter_not_null_value(df, coluna):
 
-        dffiltered = df.filter(col(coluna).isNotNull())
+    dffiltered = df.filter(col(coluna).isNotNull())
 
-        qtddotal = df.count()
-        qtdnotnull = df.filter(col(coluna).isNotNull()).count()
-        qtdnull = df.filter(col(coluna).isNull()).count()
+    qtddotal = df.count()
+    qtdnotnull = df.filter(col(coluna).isNotNull()).count()
+    qtdnull = df.filter(col(coluna).isNull()).count()
 
-        print(f"dataframe filtrado, numero de linhas: {qtdnotnull}")
+    print(f"dataframe filtrado, numero de linhas: {qtdnotnull}")
 
-        assert qtddotal == (qtdnull + qtdnotnull)
+    assert qtddotal == (qtdnull + qtdnotnull)
 
-        print(f"Filtro ralizado com sucesso")
-        print(f"df origem {qtddotal} linhas = df filtrado {qtdnotnull} linhas + df não filtrado {qtdnull} linhas")
+    print(f"Filtro ralizado com sucesso")
+    print(f"df origem {qtddotal} linhas = df filtrado {qtdnotnull} linhas + df não filtrado {qtdnull} linhas")
 
-        return dffiltered
+    return dffiltered
 
 # COMMAND ----------
 
@@ -170,7 +126,7 @@ df = filter_not_null_value(df, "codigo")
 
 def define_data_columns(df):
 
-    formato_regex = r"^\d{4}-\d{2}-\d{2}$"  # Regex para formato 'YYYY-MM-DD'
+    formato_regex = r"^\d{4}-\d{2}-\d{2}$"
 
     colunas_string = [coluna for coluna, dtype in df.dtypes if dtype == "string"]  
 
@@ -258,13 +214,13 @@ def define_numeric_columns(df):
 
 # COMMAND ----------
 
-df = silver_data.define_numeric_columns(df)
+df = define_numeric_columns(df)
 
 # COMMAND ----------
 
 def replace_nulls_with_zero(df):
     # Identificar colunas numéricas (inteiras e decimais)
-    numeric_cols = [field.name for field in df.schema.fields if isinstance(field.dataType, (IntegerType, FloatType, LongType, DoubleType))]
+    numeric_cols = [field.name for field in df.schema.fields if isinstance(field.dataType, (LongType, DoubleType))]
 
     print(f"Colunas numéricas identificadas: {numeric_cols}")
 
@@ -292,7 +248,7 @@ def replace_nulls_with_zero(df):
 
 # COMMAND ----------
 
-df = silver_data.replace_nulls_with_zero(df)
+df = replace_nulls_with_zero(df)
 
 # COMMAND ----------
 
@@ -326,12 +282,124 @@ def replace_nulls_with_hyphen(df):
 
 # COMMAND ----------
 
-df = silver_data.replace_nulls_with_hyphen(df)
+df = replace_nulls_with_hyphen(df)
 
 # COMMAND ----------
 
-# Caminho para a external location do diretório silver
-silver_path = f'/Volumes/nintendo_databricks/{env}/silver-vol'
+def extract_memory(df, column_name):
+    
+    def extract_memory_info(info):
 
-# Salva o DataFrame em formato parquet na external location
-df.write.mode("overwrite").parquet(silver_path)
+        if isinstance(info, str) and info:
+            padrao = r'(\d+)\s*(G[Bb])'
+            resultado = re.search(padrao, info, re.IGNORECASE)
+            if resultado:
+                return resultado.group(0)
+        return '-'
+
+    extrair_memoria_udf = udf(extract_memory_info, StringType())
+    
+    return df.withColumn('memoria', extrair_memoria_udf(col(column_name)))
+
+# COMMAND ----------
+
+df = extract_memory(df, 'nome')
+
+# COMMAND ----------
+
+def condition_like(df, new_column_name, condition_column, pattern):
+    
+    
+    df = df.withColumn(new_column_name, when(col(condition_column).rlike(pattern), 'Sim').otherwise('Nao'))
+
+    return df
+
+# COMMAND ----------
+
+df = condition_like(df, 'oled', 'nome', '(?i)Oled')
+df = condition_like(df, 'lite', 'nome', '(?i)Lite')
+
+# COMMAND ----------
+
+# Caminho de destino para a tabela Delta
+delta_table_path = "/Volumes/nintendodatabricks_workspace_122994842671072/nintendo/silver"
+
+print(f"Iniciando o salvamento do DataFrame no formato Delta em: {delta_table_path}")
+
+try:
+    # --- Passo 1: Obter a contagem de linhas ANTES de salvar ---
+    num_rows_to_save = df.count()
+    print(f"Número de linhas no DataFrame a ser salvo: {num_rows_to_save}")
+
+    # --- Passo 2: Salvar o DataFrame no formato Delta ---
+    df.write \
+        .format("delta") \
+        .mode("overwrite") \
+        .option("overwriteSchema", "true") \
+        .partitionBy("data") \
+        .save(delta_table_path)
+
+    print(f"DataFrame salvo com sucesso como tabela Delta particionada por 'data' em: {delta_table_path}")
+
+    # --- Início das Verificações de Qualidade Pós-Gravação ---
+
+    # --- 1. Garantir que os dados foram salvos no caminho ---
+    print(f"\n--- Verificação: Leitura da Tabela Delta Salva ---")
+    df_delta_read = spark.read.format("delta").load(delta_table_path)
+    print("Esquema da tabela Delta lida:")
+    df_delta_read.printSchema()
+    print("Primeiras 5 linhas da tabela Delta lida:")
+    df_delta_read.show(5, truncate=False)
+
+    if df_delta_read.isEmpty():
+        print(f"ALERTA: A tabela Delta salva em '{delta_table_path}' está vazia ou não pôde ser lida.")
+    else:
+        print(f"OK: A tabela Delta foi lida com sucesso de '{delta_table_path}'.")
+
+
+    # --- 2. Verificar se a quantidade de linhas salvas condiz com o que está salvo ---
+    num_rows_saved = df_delta_read.count()
+    print(f"\n--- Verificação: Contagem de Linhas Salvas ---")
+    print(f"Número de linhas salvas na tabela Delta: {num_rows_saved}")
+
+    if num_rows_saved == num_rows_to_save:
+        print(f"STATUS: OK - A quantidade de linhas salvas ({num_rows_saved}) corresponde à quantidade de linhas no DataFrame original ({num_rows_to_save}).")
+    else:
+        print(f"ALERTA: A quantidade de linhas salvas ({num_rows_saved}) NÃO CORRESPONDE à quantidade de linhas no DataFrame original ({num_rows_to_save}). Investigue!")
+
+
+    # --- 3. Verificar se realmente foi particionado ---
+    print(f"\n--- Verificação: Particionamento por 'data' ---")
+
+
+    print("Conteúdo do diretório Delta (buscando por pastas de partição usando dbutils):")
+    try:
+        # Lista os subdiretórios no caminho Delta. Esperamos ver pastas como data=YYYY-MM-DD
+        delta_contents = dbutils.fs.ls(delta_table_path)
+        partition_folders_found = [f.name for f in delta_contents if f.isDir and "=" in f.name]
+        if partition_folders_found:
+            print(f"Pastas de partição detectadas (ex: {', '.join(partition_folders_found[:3])}...):")
+        else:
+            print("Nenhuma pasta de partição padrão (ex: 'data=...') detectada diretamente no caminho raiz.")
+
+    except Exception as ls_e:
+        print(f"ALERTA: Erro ao listar conteúdo do diretório Delta com dbutils.fs.ls(): {ls_e}")
+
+
+    # O método mais confiável continua sendo usar o DESCRIBE DETAIL
+    try:
+        spark.sql(f"DESCRIBE DETAIL delta.`{delta_table_path}`").show(truncate=False)
+        table_details_df = spark.sql(f"DESCRIBE DETAIL delta.`{delta_table_path}`")
+        partition_columns = table_details_df.select("partitionColumns").collect()[0][0] # Pega o primeiro elemento da lista
+
+        if "data" in partition_columns:
+            print(f"STATUS: OK - A tabela Delta está particionada pela coluna 'data'.")
+        else:
+            print(f"ALERTA: A tabela Delta NÃO parece estar particionada pela coluna 'data'. Partições encontradas: {partition_columns}")
+
+    except Exception as sql_e:
+        print(f"ALERTA: Não foi possível obter detalhes da tabela Delta (verifique o log): {sql_e}")
+
+
+except Exception as e:
+    print(f"Ocorreu um erro geral ao salvar ou verificar a tabela Delta: {e}")
