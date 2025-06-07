@@ -27,6 +27,13 @@ resource "azurerm_storage_container" "containernintnedo" {
   container_access_type = "private"
 }
 
+resource "azurerm_storage_data_lake_gen2_path" "inbound" {
+  storage_account_id = azurerm_storage_account.stracc.id
+  filesystem_name    = azurerm_storage_container.containernintnedo.name
+  path               = "inbound"
+  resource           = "directory"
+}
+
 resource "azurerm_storage_data_lake_gen2_path" "bronze" {
   storage_account_id = azurerm_storage_account.stracc.id
   filesystem_name    = azurerm_storage_container.containernintnedo.name
@@ -46,6 +53,27 @@ resource "azurerm_storage_data_lake_gen2_path" "gold" {
   filesystem_name    = azurerm_storage_container.containernintnedo.name
   path               = "gold"
   resource           = "directory"
+}
+
+resource "azurerm_storage_account_management_policy" "inbound_lifecycle_policy" {
+  storage_account_id = azurerm_storage_account.stracc.id
+
+  rule {
+    name    = "delete-inbound-old-files"
+    enabled = true
+    filters {
+      prefix_match = ["nintendo/inbound/"]
+      blob_types   = ["blockBlob"]
+    }
+    actions {
+      version {
+        delete_after_days_since_creation = 30
+      }
+      base_blob {
+        delete_after_days_since_creation = 30
+      }
+    }
+  }
 }
 
 resource "azurerm_service_plan" "srvplan" {
@@ -70,47 +98,47 @@ resource "azurerm_linux_function_app" "funcappcons" {
 
 }
 
-resource "azurerm_eventhub_namespace" "eventspace" {
-  name                = "eventhubspacenintendo"
-  location            = azurerm_resource_group.rgroup.location
-  resource_group_name = azurerm_resource_group.rgroup.name
-  sku                 = "Standard"
-  capacity            = 2
-
+resource "random_string" "naming" {
+  special = false
+  upper   = false
+  length  = 6
 }
 
-resource "azurerm_eventhub" "nintendotopic" {
-  name                = "nintendotopic"
-  namespace_name      = azurerm_eventhub_namespace.eventspace.name
-  resource_group_name = azurerm_resource_group.rgroup.name
-  partition_count     = 2
-  message_retention   = 2
-}
-
-resource "azurerm_eventhub_consumer_group" "nintendoconsumer" {
-  name                = "nintendoconsumer"
-  namespace_name      = azurerm_eventhub_namespace.eventspace.name
-  eventhub_name       = azurerm_eventhub.nintendotopic.name
-  resource_group_name = azurerm_resource_group.rgroup.name
+locals {
+  prefix = "nintendodatabricks${random_string.naming.result}"
 }
 
 resource "azurerm_databricks_workspace" "databricks_workspace" {
-  name                        = "nintendodatabricks-workspace"
+  name                        = "${local.prefix}-workspace"
   resource_group_name         = azurerm_resource_group.rgroup.name
   location                    = azurerm_resource_group.rgroup.location
   sku                         = "trial"
-  managed_resource_group_name = "nintendodatabricks-workspace-rg"
+  managed_resource_group_name = "${local.prefix}-workspace-rg"
+}
+
+resource "databricks_user" "felipe_user" {
+  user_name    = "felipegoraro@outlook.com.br"
+  display_name = "Felipe Pegoraro"
 }
 
 resource "databricks_cluster" "dtb_cluster" {
-  cluster_name            = var.cluster_dev_name
-  spark_version           = var.databricks_spark_version
-  node_type_id            = var.databricks_node_type
+  cluster_name            = "nintendo"
+  spark_version           = "16.1.x-scala2.12"
+  node_type_id            = "Standard_DS3_v2"
+  driver_node_type_id     = "Standard_DS3_v2"
   autotermination_minutes = 10
-  data_security_mode      = "LEGACY_PASSTHROUGH"
+  enable_elastic_disk     = true
+  single_user_name        = databricks_user.felipe_user.user_name
+  data_security_mode      = "SINGLE_USER"
+  runtime_engine          = "PHOTON"
+
   autoscale {
     min_workers = 1
     max_workers = 2
+  }
+
+  spark_conf = {
+    "spark.master" = "local[*, 4]"
   }
 }
 

@@ -1,6 +1,6 @@
 import logging
 import azure.functions as func
-from azure.eventhub import EventHubProducerClient, EventData
+from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
 import requests
 import os
 from bs4 import BeautifulSoup
@@ -25,8 +25,8 @@ def request_web(myTimer: func.TimerRequest) -> None:
 
     url = "https://www.kabum.com.br/gamer/nintendo/consoles-nintendo"
     ai_key = os.environ.get("OPENAI_API")
-    eventhub_connection_string = os.environ.get("EVENTHUB_CONNECTION_STRING")
-    eventhub_name = os.environ.get("EVENTHUB_NAME")
+    storage_connection_string = os.environ.get("AzureStorageConnection")
+    container_name = "nintendo"
 
     def get_html(url):
 
@@ -102,37 +102,47 @@ def request_web(myTimer: func.TimerRequest) -> None:
         else:
             logging.warning("Nenhum JSON encontrado na resposta da LLM.")
             return []
-            
-    def send_producer(list_todos):
 
-        if not eventhub_connection_string or not eventhub_name:
-            logging.error("Por favor, certifique-se de que as variáveis de ambiente 'EVENTHUB_CONNECTION_STRING' e 'EVENTHUB_NAME' estão definidas.")
-            return
+    def send_to_blobstorage(list_todos):
 
-        logging.info(f"Conectando ao Event Hub '{eventhub_name}'...")
         try:
-            producer = EventHubProducerClient.from_connection_string(
-                conn_str=eventhub_connection_string,
-                eventhub_name=eventhub_name
-            )
+            # Criar um cliente de serviço Blob usando a string de conexão
+            blob_service_client = BlobServiceClient.from_connection_string(storage_connection_string)
+            
+            # Obter um cliente para o container
+            container_client = blob_service_client.get_container_client(container_name)
 
-            with producer:
-                for produto in list_todos: # Envia cada produto individualmente
-                    try:
-                        event_data_batch = producer.create_batch()
-                        event_data_batch.add(EventData(json.dumps(produto)))
-                        producer.send_batch(event_data_batch)
-                        logging.info(f"Mensagem enviada para Event Hub: {json.dumps(produto)}")
-                    except Exception as e:
-                        logging.error(f"Erro ao enviar mensagem para o Event Hub: {e}, dados: {produto}")
+            # Criar o container se ele não existir
+            try:
+                container_client.create_container()
+                logging.info(f"Container '{container_name}' criado com sucesso.")
+            except Exception as e:
+                # Ignorar o erro se o container já existir
+                if "ContainerAlreadyExists" not in str(e):
+                    logging.error(f"Erro ao criar o container '{container_name}': {e}")
 
-            logging.info(f"Todas as mensagens foram enviadas com sucesso para o Event Hub '{eventhub_name}'!")
+            # Gerar um nome de arquivo único (ex: nintendo_data_2025-06-07_19-51-08.json)
+            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            blob_name = f"inbound/kabum_{timestamp}.json"
+
+            # Serializar a lista de produtos para uma string JSON
+            json_output = json.dumps(list_todos, indent=4, ensure_ascii=False)
+
+            # Obter um cliente de blob e fazer o upload
+            blob_client = container_client.get_blob_client(blob_name)
+            blob_client.upload_blob(json_output, overwrite=True)
+
+            logging.info(f"Dados enviados com sucesso para o blob '{blob_name}' no container '{container_name}'.")
 
         except Exception as e:
-            logging.error(f"Erro ao conectar ou enviar para o Event Hub: {e}")
+            logging.error(f"Erro ao enviar dados para o Blob Storage: {e}")
 
     filetext = get_html(url)
     if filetext:
         list_todos = get_content(filetext)
         if list_todos:
-            send_producer(list_todos)
+            send_to_blobstorage(list_todos)
+        else:
+            logging.warning("Nenhum conteúdo para enviar ao blobstorage.")
+
+

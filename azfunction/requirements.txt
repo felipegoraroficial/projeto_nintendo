@@ -3,7 +3,7 @@
 # Manually managing azure-functions-worker may cause unexpected issues
 
 azure-functions
-azure-eventhub
+azure-storage-blob
 requests
 beautifulsoup4
 langchain-openai
