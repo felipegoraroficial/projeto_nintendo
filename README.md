@@ -1,8 +1,8 @@
-# WebScrapy de Anúncios de Dados de Consoles Nintendo Switch
+# WebScrapy de Anúncios de Dados de Consoles Nintendo Switch V2
 
 ## Objetivo:
 
-O objetivo deste projeto é a captura de dados quase em tempo real referentes a anúncios de vendas em e-commerce/marketplaces de forma escalável, com foco específico nos consoles Nintendo Switch. Os dados capturados são tratados e armazenados em um ambiente na nuvem, permitindo sua integração com ferramentas de visualização de dados (DataViz). Isso possibilita a geração de gráficos e insights para identificar os melhores preços e as principais características dos consoles em diferentes marketplaces.
+O objetivo deste projeto é a captura de dados em quase tempo real referentes a anúncios de vendas em e-commerce/marketplaces de forma escalável, com foco específico nos consoles Nintendo Switch. Os dados capturados são tratados e armazenados em um ambiente na nuvem, permitindo sua integração com ferramentas de visualização de dados (DataViz). Isso possibilita a geração de gráficos e insights para identificar os melhores preços/oportunidades e as principais características dos consoles em diferentes marketplaces.
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/44df77ae-63ca-4d69-8c58-7820cdb98b5a" alt="Desenho Técnico">
@@ -16,20 +16,19 @@ O objetivo deste projeto é a captura de dados quase em tempo real referentes a 
 
 O projeto foi desenvolvido utilizando as linguagens de programação Python e PySpark na paltaforma de nuvem da Azure. Para a normalização e modelagem de dados, foi utilizado SQL na plataforma dbt Cloud.
 Usando Azure Functions para realizar requests em quase tempo real e armazenar o conteuúdo html no diretorio inbound da conta de armazenamento da Azure.
-Com Azure Databricks como plataforma do processo de ELT, foi utilizando a linguegam Pyspark apra lidar com grandes volume de dados na stage silver e gold
-Para tornar o projeto escalavél, utilizamos a biblioteca langchain para utilização de IA para captura de contéudos html em cada requisição feita pelo app Azure Functions.
-Por fim, os dados são processados e carregados em uma tabela externa com o proposito de facilitar a moigração de dados para outra plataforma, caso necessário.
+Com Azure Databricks como plataforma de pipeline de dados na arquitetura medalhão, foi utilizando a linguegam Pyspark para lidar com grandes volume de dados na stage bronze, silver e gold.
+Para tornar o projeto escalavél, utilizamos a biblioteca langchain para utilização de um agent IA que tem como sua principal função a captura de contéudos html em cada requisição feita pelo app Azure Functions.
+Por fim, os dados são processados e carregados em uma tabela externa com o proposito de facilitar a migração de dados para outra plataforma cloud ou onprimese, caso necessário.
 
-No dbt, é feita a conexão do catálogo do Databricks e são criadas tables de normalização de dados e views de métricas para análise de dados.
+No dbt, é feita a conexão do catálogo do Databricks e são criadas tables que passam por uma transformação de normalização dados e também são criadas viewsreferente a métricas para análise de dados.
 
-Todo o processo ocorre no workflow do Databricks de forma agendada, com alertas enviados por e-mail em caso de tempo de processo ultrapassar o limite estimado ou falha.
+Foi criado um Job dentro da plataforma Databricks que está schedulado sempre que um novo arquivo no diretorio inbound no container da StorageAccount é adicionado.
+No dbt, os jobs foram criado na plataforma cloud do próprio dbt e schedulado por trigger time.
 
-No final do workflow é gerado dados referente a log do processo e lienage de tabelas que são armazenado em uma tabela no catalogo do databricks que servirão de fonte de dados ao dashboard de monitoramento do workspace.
-
-Os scripts são versionados e podem ser separados por ambientes como por exemplo: desenvolvimento (dev) e produção (prd).
+Para o monitoramento desses jobs foi criado um painel no Grafana que conecta nas duas plataforma e nos permite uma visão integrada dos Jobs.
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/74d30a1c-222a-4576-bb07-a0a2ecaa7be9" alt="Desenho Técnico">
+  <img src="https://github.com/user-attachments/assets/92966a7e-cda8-4b6a-b4de-674f26380843" alt="Desenho Técnico">
   <p><b>Desenho Técnico</b></p>
 </div>
 
@@ -45,14 +44,14 @@ Os scripts são versionados e podem ser separados por ambientes como por exemplo
 
 2. **Escalando Captura de Elemento HTML**:
     - **Objetivo**: Utilizar modelos de IA para extrair informações essenciais dos arquivos HTML, como links, títulos, preços, promoções, parcelamentos e imagens dos produtos.
-    - **Benefício**: Flexibilidade para processo prdotivo com menor probabilidade para correções de bugs.
+    - **Benefício**: Escalabilidade para ampliar o leque de fonte de dados e flexibilidade para processo produtivo com menor probabilidade para correções de bugs.
 
 3. **Processamento e Escalabilidade para BigData**:
-    - **Objetivo**: Aplicar processamento Spark ao conjuntos de dados na etapa de transformação.
+    - **Objetivo**: Aplicar processamento Spark ao conjuntos de dados na arquitetura medalhão do pipeline.
     - **Benefício**: Melhoria da qualidade dos dados, com correção de dados e padronização do mesmo e, além disso, o processamento de dados escalonáveis e suportando big data.
 
 4. **Independência entre Plataformas**:
-    - **Objetivo**: Armazenar dados tratados em uma external table.
+    - **Objetivo**: Armazenar dados em repositórios externos.
     - **Benefício**: Garantir a flexibilidade para migrações de dados para outras plataformas.
 
 5. **Separação de Plataforma entre Times**:
@@ -60,35 +59,37 @@ Os scripts são versionados e podem ser separados por ambientes como por exemplo
     - **Benefício**: Ganho em foco e agilidade no processo, segurança em carga de trabalho e governança sobre a plataforma
 
 6. **Monitoramento de Processo**:
-    - **Objetivo**: Integrar ambas plataforma em um unico pipeline de dados.
+    - **Objetivo**: Integrar ambas plataforma em uma unicá ferramenta de Monitoramento.
     - **Benefício**: Monitoramento e velocidade na interpretação de incidente para atuar em correções e/ou manutenções.
 
-## Construção do projeto:
+## Construção do Ambiente com Terraform:
+
+## Construção do Ambiente:
 
 ### 1.Criação do storageaccount
 
-- Com o grupo de recursos criado, o primeiro passo foi a criação de uma conta de armazenamento Gen2 com redundância local e camada cool, pois os dados serão acessados com pouca frequência por se tratar de um processo batch.
-- Na mesma conta de armazenamento, foram criados dois containers, dev e prd, para separar os dados de produção daqueles em desenvolvimento.
-- Em cada container, foram criados volumes do Databricks com link externos para definição de uma hierarquia de pastas que será utilizada para a construção do processo ELTL no modelo de medalhão, onde temos os seguintes dados:
-    - Inbound: Dados brutos conforme vêm da extração web em formato HTML, separados pela data da extração.
-    - Bronze: Identificação dos elementos web necessários para o projeto e armazenados em um arquivo PARQUET conforme a data do arquivo de extração.
-    - Silver: União de todos os arquivos em seus diferentes diretórios e o tratamento de limpeza e ajuste dos dados.
-    - Gold: Criação da external table no databricks com a fonte de dados na conta de armazenamento particionada pela data de extração.
+- Com o grupo de recursos criado, o primeiro passo foi a criação de uma conta de armazenamento Gen2 com redundância local e camada hot, pois os dados serão acessados em alta frequência por se tratar de um processo streaming near real time.
+- Na mesma conta de armazenamento, foi criado um único containers.
+- E para este container, foram criados volumes do Databricks com link externos para definição de uma hierarquia de pastas que será utilizada para a construção do pipeline de dados no modelo de arquitetura medalhão, onde temos os seguintes dados:
+    - Inbound: Dados brutos conforme vêm aplucação do azure fucntion no formato json.
+    - Bronze: Estruturação e processamento dos dados json que serão salvos na camada bronze de forma incremental pelo particionamento da data de extração dos dados.
+    - Silver: Etapa em que os dados são padronizados, estruturados pela definição de schemas, limpeza de valores nulos entre outras etapas definidas na camada silver para garantir a maior confiabilidade dos dados brutos.
+    - Gold: Ultima etapa do pipeline de dados, aqui se aplica a construção da regra de negocio que servirá de auxlio para criação de metricas e indicadores dos dados.
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/c064337e-660e-4664-b34f-f2f2ccbbb99f" alt="storageaccount">
+  <img src="https://github.com/user-attachments/assets/40f51823-3c1c-4f6a-9afe-c099aff11b19" alt="storageaccount">
   <p><b>StorageAccount-Estrutura</b></p>
 </div>
 
 <p align="left">
 </p>
 
-- Em gerenciamento do ciclo de vida dos blobs, foi configurado um limite de vida de 30 dias para arquivos que estão an stage inbound e bronze para que não tenhamos uma grande quantidade de arquivos salvos na conta de armazenamento já que os registros são armazenados em external tables do catalog do databricks.
+- Em gerenciamento do ciclo de vida dos blobs, foi configurado um limite de vida de 30 dias para arquivos que estão na stage inbound para que não tenhamos uma grande quantidade desnecessária de arquivos salvos na conta de armazenamento que já foram processados anteriormente.
 
-OBS: O clico de vida de 30 dias de arquivos em stage inbound e bronze serve também para uma margem de segurança em casos de alterações de elementos do html extraidos para interação com o BeautifulSoup.
+OBS: O clico de vida de 30 dias de arquivos em stage inbound serve também para uma margem de segurança em casos de falhas no processo de extração na aplicação do Azure Function.
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/6d89a267-6f16-4940-abea-aed50aad7ef7" alt="ciclo de vida blobs">
+  <img src="https://github.com/user-attachments/assets/59952bef-fcb4-44da-ad7e-0d5db95b7883" alt="ciclo de vida blobs">
   <p><b>Definindo Ciclo de Vida Blobs</b></p>
 </div>
 
@@ -122,29 +123,8 @@ Com o Azure Databricks criado sem nenhuma particularidade específica, basta ace
   https://github.com/felipegoraroficial/projeto_nintendo.git
 
   <div align="center">
-  <img src="https://github.com/user-attachments/assets/2e0668da-a588-473e-af56-1864db730d82" alt="Workspace">
+  <img src="https://github.com/user-attachments/assets/6a0d0f95-6dea-4ea5-b055-4ccccf2ab823" alt="Workspace">
   <p><b>Workspace</b></p>
-</div>
-
-<p align="left">
-</p>
-  
-
-- Criação da external table no cátalogo.
-
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/87fa2d19-d802-4f03-befc-940b321fbc24" alt="external table gold">
-  <p><b>External Table</b></p>
-</div>
-
-<p align="left">
-</p>
-
-- Criação de volumes  no cátalogo.
-
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/455722a8-8466-4e08-9e8c-6f86377bd2e7" alt="volumes databricks">
-  <p><b>Criação do Volumes no Databricks</b></p>
 </div>
 
 <p align="left">
@@ -210,6 +190,27 @@ https://learn.microsoft.com/en-us/azure/databricks/data-governance/unity-catalog
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/7314c14e-a878-41a3-a4de-2d63fb470bc0" alt="config-access-conector">
+</div>
+
+<p align="left">
+</p>
+
+Com o access conector configurado ao storageaccount e as credenciais e external location criadas em nosso workspace, agora podemos criar os volumes/external tables conectados aos diretorios inbound, bronze, silver e gold do container nintendo.
+- Criação da external table no cátalogo.
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/87fa2d19-d802-4f03-befc-940b321fbc24" alt="external table gold">
+  <p><b>External Table</b></p>
+</div>
+
+<p align="left">
+</p>
+
+- Criação de volumes  no cátalogo.
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/455722a8-8466-4e08-9e8c-6f86377bd2e7" alt="volumes databricks">
+  <p><b>Criação do Volumes no Databricks</b></p>
 </div>
 
 <p align="left">
