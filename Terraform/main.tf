@@ -71,10 +71,17 @@ resource "azurerm_linux_function_app" "funcappcons" {
   storage_account_name       = azurerm_storage_account.stracc.name
   storage_account_access_key = azurerm_storage_account.stracc.primary_access_key
   service_plan_id            = azurerm_service_plan.srvplan.id
-  site_config {
 
+  site_config {
+    application_stack {
+      python_version = "3.9"
+    }
   }
 
+  app_settings = {
+    "FUNCTIONS_WORKER_RUNTIME" = "python"
+    "AzureWebJobsStorage"      = azurerm_storage_account.stracc.primary_connection_string
+  }
 }
 
 resource "random_string" "naming" {
