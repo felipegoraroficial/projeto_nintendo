@@ -39,7 +39,7 @@ def last_partition_delta(nome_tabela, coluna_particao):
 # COMMAND ----------
 
 # Caminho para a external location do diretório bronze
-bronze_path = f"/Volumes/nintendodatabricksplgwf5_workspace/nintendo/bronze"
+bronze_path = f"/Volumes/nintendodatabricksbuvkb4_workspace/nintendo/bronze"
 
 # Lendo arquivo Delta do diretório bronze pela ultima partição
 df = last_partition_delta(bronze_path, "data")
@@ -335,7 +335,7 @@ df = condition_like(df, 'lite', 'nome', '(?i)Lite')
 # COMMAND ----------
 
 # Caminho de destino para a tabela Delta
-delta_table_path = "/Volumes/nintendodatabricksplgwf5_workspace/nintendo/silver"
+delta_table_path = "/Volumes/nintendodatabricksbuvkb4_workspace/nintendo/silver"
 
 print(f"Iniciando o salvamento do DataFrame no formato Delta em: {delta_table_path}")
 

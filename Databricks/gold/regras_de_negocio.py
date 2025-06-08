@@ -39,7 +39,7 @@ def read_all_delta_partitions(nome_tabela):
 # COMMAND ----------
 
 # Caminho para a external location do diretório silver
-silver_path = f"/Volumes/nintendodatabricksplgwf5_workspace/nintendo/silver"
+silver_path = f"/Volumes/nintendodatabricksbuvkb4_workspace/nintendo/silver"
 
 # Lendo arquivo Delta do diretório silver em todas partições
 df = read_all_delta_partitions(silver_path)
