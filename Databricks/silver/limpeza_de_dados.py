@@ -7,22 +7,6 @@ import os
 
 # COMMAND ----------
 
-# Definindo o esquema para o DataFrame
-schema = StructType([
-    StructField("id", StringType(), True),               # ID do produto
-    StructField("codigo", StringType(), True),           # Codigo do produto
-    StructField("nome", StringType(), True),             # Nome do produto
-    StructField("moeda", StringType(), True),            # Moeda utilizada na transação
-    StructField("desconto", StringType(), True),         # Condição promocional do produto
-    StructField("preco", DoubleType(), True),            # Preço do produto
-    StructField("parcelado", StringType(), True),        # Valor parcelado do produto
-    StructField("link", StringType(), True),             # URL do link do produto
-    StructField("file_date", DateType(), True),          # Data do arquivo
-    StructField("status", StringType(), True),           # Status do registro
-])
-
-# COMMAND ----------
-
 def last_partition_delta(nome_tabela, coluna_particao):
 
     spark = SparkSession.builder.getOrCreate()
@@ -54,13 +38,11 @@ def last_partition_delta(nome_tabela, coluna_particao):
 
 # COMMAND ----------
 
-# Caminho para a external location do diretório bronze em mercadolivre
-bronze_path = f"/Volumes/nintendodatabricks037cbq_workspace/nintendo/bronze"
+# Caminho para a external location do diretório bronze
+bronze_path = f"/Volumes/nintendodatabricksplgwf5_workspace/nintendo/bronze"
 
 # Lendo arquivo Delta do diretório bronze pela ultima partição
-df1 = last_partition_delta(bronze_path, "data")
-# Lendo arquivo Delta do diretório bronze pela ultima partição
-df2 = last_partition_delta(bronze_path, "data")
+df = last_partition_delta(bronze_path, "data")
 
 # COMMAND ----------
 
@@ -94,7 +76,7 @@ def union_dfs_list(dataframe_list):
 # COMMAND ----------
 
 # Cria uma lista com os DataFrames
-lista_de_dfs = [df1,df2]
+lista_de_dfs = [df]
 
 # Chama a função para unir os DataFrames
 df = union_dfs_list(lista_de_dfs)
@@ -154,6 +136,37 @@ def define_data_columns(df):
 # COMMAND ----------
 
 df = define_data_columns(df)
+
+# COMMAND ----------
+
+def tratar_parcelamento(df):
+
+    # Extraia o número de parcelas (já tratando nulos)
+    df_com_parcelas = df.withColumn(
+        "numero_parcelas",
+        when(col("parcelamento").isNotNull(), regexp_extract(col("parcelamento"), r'(\d+)x', 1)).otherwise(lit(0))
+    )
+    df_com_parcelas = df_com_parcelas.withColumn("numero_parcelas", col("numero_parcelas").cast(LongType()))
+
+    # Extraia o valor da prestação (já tratando nulos e convertendo para Double)
+    df_com_valores = df_com_parcelas.withColumn(
+        "valor_prestacao",
+        when(col("parcelamento").isNotNull(), regexp_extract(col("parcelamento"), r'R\$ (\d+,\d{2})', 1)).otherwise(lit("0"))
+    ).withColumn(
+        "valor_prestacao",
+        when(col("valor_prestacao") != '0',
+            regexp_replace(col("valor_prestacao"), ",", ".").cast(DoubleType())
+        ).otherwise(lit(0.0))
+    )
+
+    # Remova a coluna original "parcelamento"
+    df_final = df_com_valores.drop("parcelamento")
+
+    return df_final
+
+# COMMAND ----------
+
+df = tratar_parcelamento(df)
 
 # COMMAND ----------
 
@@ -322,7 +335,7 @@ df = condition_like(df, 'lite', 'nome', '(?i)Lite')
 # COMMAND ----------
 
 # Caminho de destino para a tabela Delta
-delta_table_path = "/Volumes/nintendodatabricks037cbq_workspace/nintendo/silver"
+delta_table_path = "/Volumes/nintendodatabricksplgwf5_workspace/nintendo/silver"
 
 print(f"Iniciando o salvamento do DataFrame no formato Delta em: {delta_table_path}")
 
