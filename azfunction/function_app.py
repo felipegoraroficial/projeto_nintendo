@@ -78,7 +78,7 @@ def request_web(myTimer: func.TimerRequest) -> None:
 
             list_todos = []
 
-            data_atual = datetime.now().strftime("%Y-%m-%d")
+            data_atual = datetime.now().strftime("%Y-%m-%d %H:%M")
 
             if 'produtos' in dados and isinstance(dados['produtos'], list):
                 for produto in dados['produtos']:
@@ -95,7 +95,7 @@ def request_web(myTimer: func.TimerRequest) -> None:
                         'desconto': desconto,
                         'parcelamento': parcelamento,
                         'link': link,
-                        'data':data_atual
+                        'extract':data_atual
                     })
 
             return list_todos

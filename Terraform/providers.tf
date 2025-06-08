@@ -6,11 +6,15 @@ terraform {
     }
     azuread = {
       source  = "hashicorp/azuread"
-      version = "~> 1.0"
+      version = "~> 2.0"
     }
-    random = "~> 2.2"
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
     databricks = {
-      source = "databricks/databricks"
+      source  = "databricks/databricks"
+      version = "~> 1.25"
     }
   }
 }

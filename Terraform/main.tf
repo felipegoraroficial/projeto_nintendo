@@ -55,27 +55,6 @@ resource "azurerm_storage_data_lake_gen2_path" "gold" {
   resource           = "directory"
 }
 
-resource "azurerm_storage_account_management_policy" "inbound_lifecycle_policy" {
-  storage_account_id = azurerm_storage_account.stracc.id
-
-  rule {
-    name    = "delete-inbound-old-files"
-    enabled = true
-    filters {
-      prefix_match = ["nintendo/inbound/"]
-      blob_types   = ["blockBlob"]
-    }
-    actions {
-      version {
-        delete_after_days_since_creation = 30
-      }
-      base_blob {
-        delete_after_days_since_creation = 30
-      }
-    }
-  }
-}
-
 resource "azurerm_service_plan" "srvplan" {
   name                = "nintendoservplan"
   location            = azurerm_resource_group.rgroup.location
