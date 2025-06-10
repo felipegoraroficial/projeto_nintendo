@@ -390,68 +390,50 @@ Com o access conector configurado ao storageaccount e as credenciais e external 
 
 ### 6.Workflow Databricks
 
-- Crie dois workflows: um com a tag hml, que se refere ao fluxo de teste, e outro com a tag prd, que será o fluxo de produção.
+- Crie um workflows: inclua tags e descrição se preferir. É muito util incluir tags e descrição para identificação de Jobs quandos e trata de um ambiente com diversos Jobs criado.
+
+- Adicione a seguinte Agenda ao Job: Chegada do ficheiro. Este tipo de ativação do Job faz com que o start do fluxo se inicie a partir de novos arquivos que são adicionados em um local especificado
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/aa100607-25ee-4ecb-8143-d66ea889b251" alt="jobs databricks">
-  <p><b>Jobs Databricks</b></p>
+  <img src="https://github.com/user-attachments/assets/56ee602f-3523-49b7-9c1c-918167b4293d" alt="triggers jobs">
 </div>
 
 <p align="left">
 </p>
 
-- Em cada workflow, habilite a integração com o Git para poder rodar processos do dbt.
+- Para receber alertas de Jobs que falharam ou que tiveram um tempo de execução maior do que o esperado, use a seguinte configuração:
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/4e913064-fc1f-4518-a391-fa8221b9ad50" alt="config-dbt-workflow-databricks">
-  <p><b>Configurando Task com dbt</b></p>
+  <img src="https://github.com/user-attachments/assets/255caed3-91b4-4eb2-9f88-a2e6780f1c2e" alt="triggers jobs">
 </div>
 
 <p align="left">
 </p>
 
-- As tarefas que não forem relacionadas a processos do dbt serão realizadas com notebooks do espaço local, tornando dinâmica a tratativa entre os ambientes.
-- Agende o workflow de sua preferência. Para cada ambiente, foi utilizada a sintaxe cron:
-  - dev: 0 0 8 ? * MON-FRI *
-  - prd: 0 0 9,13,17 ? * MON-FRI *
-- Ative as notificações de falhas e tempo de processo para que você seja notificado por e-mail.
-
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/2a2586db-50fd-4b68-aaaf-ac0f9e7422fe" alt="details-workflow">
-  <p><b>Detalhes da Configuração do Job</b></p>
+  <img src="https://github.com/user-attachments/assets/b743d41b-0998-47a4-83c1-c78041f00c33" alt="triggers jobs">
 </div>
 
 <p align="left">
 </p>
+
+- Teremos um pipeline parecido com o da imagem abaixo:
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/93fa08db-d369-40c1-9c37-2321646efdcb" alt="workflows">
+  <p><b>Workflows do Databricks</b></p>
+</div>
+
 
 ### 7.Monitoramento Aplicação
 
+- Com aplication Insghts podemos verificar os logs da aplicação e definir alertas para receber aviso em caso de falha da aplicação ou referente a uma condição especifica:
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/fd99f0e7-b18d-41e7-abac-cf2f4cbdeed0" alt="triggers jobs">
+</div>
+
 ### 8.Dashboard Monitoramento via Databricks
-
-- Crie um painel com as fontes de dados da tabela log-table em ambos os schemas.
-
-Ao fim do pipeline é gerado uma tabela de log do workflow para cada ambiente, sendo dev e prd, a partir da extração de daods utilziando a API do Databricks.
-
-Basta unir as duas tabelas para gerar uma visão de logs em ambos ambientes.
-
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/db5f2d29-086c-4ef1-9e49-58546d1996d9" alt="fonte-dados-painel">
-</div>
-
-<p align="left">
-</p>
-
-- Crie um painel com as fontes de dados da tabela lineage-tables-monitoring em ambos os schemas e inclua uma coluna de contagem para criação de insights no painel do dashbaord.
-
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/f9c9c445-44ef-4acc-9277-26de13890d1a" alt="query painel">
-</div>
-
-<p align="left">
-</p>
-
-
-- Ao final da construção e execuções do workflow, teremo resultados semelhantes ao das imagens abaixo:
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/99bb03ff-c23f-4215-936b-54ad73388899" alt="dashboard-monitoramento">
@@ -470,19 +452,4 @@ Basta unir as duas tabelas para gerar uma visão de logs em ambos ambientes.
 </p>
 
 
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/93fa08db-d369-40c1-9c37-2321646efdcb" alt="workflows">
-  <p><b>Workflows do Databricks</b></p>
-</div>
-
-<p align="left">
-</p>
-
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/0eba13a8-e0cb-43a6-b577-18f7f0b3eb3d" alt="details workflows">
-  <p><b>Execuções Workflows do Databricks</b></p>
-</div>
-
-<p align="left">
-</p>
   
