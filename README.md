@@ -229,7 +229,7 @@ Iinicando a criação do aplicativo, siga o passo a passo:
 </p>
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/b406a9c3-3aab-439e-b60d-0228df420c0b" alt="app name">
+  <img src="https://github.com/user-attachments/assets/6d7cc159-86fd-431d-b71f-e9a34e8004a4" alt="app name">
   <p><b>Nome da Aplicação</b></p>
 </div>
 
