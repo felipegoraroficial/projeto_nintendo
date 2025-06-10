@@ -14,21 +14,19 @@ O objetivo deste projeto é a captura de dados em quase tempo real referentes a 
 
 ## Introdução:
 
-O projeto foi desenvolvido utilizando as linguagens de programação Python e PySpark na paltaforma de nuvem da Azure. Para a normalização e modelagem de dados, foi utilizado SQL na plataforma dbt Cloud.
-Usando Azure Functions para realizar requests em quase tempo real e armazenar o conteuúdo html no diretorio inbound da conta de armazenamento da Azure.
-Com Azure Databricks como plataforma de pipeline de dados na arquitetura medalhão, foi utilizando a linguegam Pyspark para lidar com grandes volume de dados na stage bronze, silver e gold.
-Para tornar o projeto escalavél, utilizamos a biblioteca langchain para utilização de um agent IA que tem como sua principal função a captura de contéudos html em cada requisição feita pelo app Azure Functions.
-Por fim, os dados são processados e carregados em uma tabela externa com o proposito de facilitar a migração de dados para outra plataforma cloud ou onprimese, caso necessário.
+O projeto foi desenvolvido utilizando as linguagens de programação Python para a aplicação no AZ Function e PySpark e SparkSQL na paltaforma de nuvem da Azure Databricks para a modelagem de dados na arquitetura medalhão e criação de tabelas fato e dimenssão bem como metricas e indicadores para posteriores analises de BI.
 
-No dbt, é feita a conexão do catálogo do Databricks e são criadas tables que passam por uma transformação de normalização dados e também são criadas viewsreferente a métricas para análise de dados.
+Usando Azure Functions para realizar requests em quase tempo real e utilizando scrap com auxilio de um agent IA para obter os conteúdos html necessários, armazenamos os dados no diretorio inbound da conta de armazenamento da Azure no formato json.
+
+Com Azure Databricks como plataforma de pipeline de dados na arquitetura medalhão, foi utilizando a linguegam Pyspark para lidar com grandes volume de dados na stage bronze, silver e gold e SparkSQL para criação de analise de dados e BI.
 
 Foi criado um Job dentro da plataforma Databricks que está schedulado sempre que um novo arquivo no diretorio inbound no container da StorageAccount é adicionado.
-No dbt, os jobs foram criado na plataforma cloud do próprio dbt e schedulado por trigger time.
 
-Para o monitoramento desses jobs foi criado um painel no Grafana que conecta nas duas plataforma e nos permite uma visão integrada dos Jobs.
+Para o monitoramento desses jobs na paltaforma do Databricks, foi criado um painel utilizando Cluster Serveless do Data Warehouse conectado a tabelas da System Tables.
+Para monitoramento da Aplicação no Azure Function foi utilizando o App Insights para monitorar os logs da aplicação.
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/92966a7e-cda8-4b6a-b4de-674f26380843" alt="Desenho Técnico">
+  <img src="https://github.com/user-attachments/assets/fb0c3732-0456-40a4-af88-67646ce63654" alt="Desenho Técnico">
   <p><b>Desenho Técnico</b></p>
 </div>
 
@@ -50,21 +48,87 @@ Para o monitoramento desses jobs foi criado um painel no Grafana que conecta nas
     - **Objetivo**: Aplicar processamento Spark ao conjuntos de dados na arquitetura medalhão do pipeline.
     - **Benefício**: Melhoria da qualidade dos dados, com correção de dados e padronização do mesmo e, além disso, o processamento de dados escalonáveis e suportando big data.
 
-4. **Independência entre Plataformas**:
-    - **Objetivo**: Armazenar dados em repositórios externos.
-    - **Benefício**: Garantir a flexibilidade para migrações de dados para outras plataformas.
+4. **Data Lakehouse Estrutura Medalhão de Dados**:
+    - **Objetivo**: Transformar o datalake (storageaccount) em um data lakehouse.
+    - **Benefício**: Combinando a flexibilidade e escalabilidade de um data lake com a confiabilidade e performance de um data warehouse.
 
-5. **Separação de Plataforma entre Times**:
-    - **Objetivo**: Separação de processos entre engenheiros de dados (Plataforma Databricks) e analistas dados (Plataforma dbt).
-    - **Benefício**: Ganho em foco e agilidade no processo, segurança em carga de trabalho e governança sobre a plataforma
+5. **Otimizando o processo para análise e BI**:
+    - **Objetivo**: Utilização do Spark SQL no Databricks para a criação de tabelas fato e dimensão a partir de uma tabela Gold do Data Lakehouse.
+    - **Benefício**: Permite uma modelagem de dados analíticos eficiente e confiável, combinando a familiaridade do SQL com a escalabilidade do Spark e a integridade do Delta Lake.
 
-6. **Monitoramento de Processo**:
-    - **Objetivo**: Integrar ambas plataforma em uma unicá ferramenta de Monitoramento.
+6. **Monitoramento de Processos**:
+    - **Objetivo**: Monitoramento nativo da Plataforma Databricks e App Insights do Azure Function.
     - **Benefício**: Monitoramento e velocidade na interpretação de incidente para atuar em correções e/ou manutenções.
 
 ## Construção do Ambiente com Terraform:
 
-## Construção do Ambiente:
+Com esses passos, toda a construção dos recursos cloud e atribuição de funções serão realizadas.
+
+- Necessário instalar CLI da Azure e Terraform na maquina.
+- Para verificar se o terraform está instalado em sua maquina, execute o seguinte comando no terminal:
+`terraform --version`
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/86edf789-0727-45a7-a633-0432e92a72b3" alt="versão terraform">
+  <p><b>Versão Terraform</b></p>
+</div>
+
+<p align="left">
+</p>
+
+- Para iniciar o terraform, execute o seguinte comando no terminal:
+`terraform init`
+OBS: Será instalado os plugins do arquivo providers.tf
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/a2f37258-f07e-4826-9871-35d9036bc1ad" alt="iniciando terraform">
+  <p><b>Iniciando Terraform</b></p>
+</div>
+
+<p align="left">
+</p>
+
+- Para validar se o terraform está com as configurações correta, execute o seguinte comando no terminal:
+`terraform validate`
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/288c8dcc-07cb-489d-b70f-3ed91b6ca601" alt="validate terraform">
+  <p><b>Validando Configurações Terraform</b></p>
+</div>
+
+<p align="left">
+</p>
+
+- Para iniciar a construção do ambiente, primeiro o Terraform precisa planejar a construção e para isso, execute o seguinte comando no terminal:
+`terraform plan`
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/0d4931e9-3d47-423e-9a29-03bf8530c3f7" alt="plan terraform">
+  <p><b>Planejamento Terraform</b></p>
+</div>
+
+<p align="left">
+</p>
+
+- Para aplicar ao planejamento realizado anteriormente, execute o seguinte comando no terminal:
+`terraform apply`
+- O Terraform irá perguntar se desejamos seguir com a aplciação, absta inserir "yes".
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/ef8360ba-c732-4ec3-b53b-ba0c90f79a25" alt="aprove apply">
+  <p><b>Aprovando Apply</b></p>
+</div>
+
+<p align="left">
+</p>
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/f22819ae-5173-4bbc-8e7a-8b54d0edb1e5" alt="terraform apply">
+  <p><b>Finanlizando Construção</b></p>
+</div>
+
+<p align="left">
+</p>
 
 ### 1.Criação do storageaccount
 
@@ -84,9 +148,9 @@ Para o monitoramento desses jobs foi criado um painel no Grafana que conecta nas
 <p align="left">
 </p>
 
-- Em gerenciamento do ciclo de vida dos blobs, foi configurado um limite de vida de 30 dias para arquivos que estão na stage inbound para que não tenhamos uma grande quantidade desnecessária de arquivos salvos na conta de armazenamento que já foram processados anteriormente.
+- Em gerenciamento do ciclo de vida dos blobs, foi configurado um limite de vida de 1 dia para arquivos que estão na stage inbound para que não tenhamos uma grande quantidade desnecessária de arquivos salvos na conta de armazenamento que já foram processados anteriormente.
 
-OBS: O clico de vida de 30 dias de arquivos em stage inbound serve também para uma margem de segurança em casos de falhas no processo de extração na aplicação do Azure Function.
+OBS: O clico de vida de 1 dia de arquivos em stage inbound serve também para uma margem de segurança em casos de falhas no processo de extração na aplicação do Azure Function.
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/59952bef-fcb4-44da-ad7e-0d5db95b7883" alt="ciclo de vida blobs">
@@ -96,7 +160,9 @@ OBS: O clico de vida de 30 dias de arquivos em stage inbound serve também para 
 <p align="left">
 </p>
 
-### 2.Criação do Azure Databricks
+### 2.Criação do Azure Function
+
+### 3.Criação do Azure Databricks
 
 Com o Azure Databricks criado sem nenhuma particularidade específica, basta acessar o workspace para realizar as configurações locais:
 - Integrar o GitHub ao Databricks com um token de uso pessoal.
@@ -186,7 +252,7 @@ https://learn.microsoft.com/en-us/azure/databricks/data-governance/unity-catalog
 - Crie um Acess Conector com a mesma região e grupo de recurso do projeto.
 - Atribua a função de Colaborador de Dados do Storage Blob ao acess conector.
 - Criação de uma credencial externa no workspace do azure databricks.
-- Criação de dois external location para os container dev e prd (necessário para a criação da external table e leituras e gravações de dados).
+- Criação de dois external location para os container dev e prd (necessário para a criação dos volumes para leituras e gravações de dados).
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/7314c14e-a878-41a3-a4de-2d63fb470bc0" alt="config-access-conector">
@@ -195,16 +261,7 @@ https://learn.microsoft.com/en-us/azure/databricks/data-governance/unity-catalog
 <p align="left">
 </p>
 
-Com o access conector configurado ao storageaccount e as credenciais e external location criadas em nosso workspace, agora podemos criar os volumes/external tables conectados aos diretorios inbound, bronze, silver e gold do container nintendo.
-- Criação da external table no cátalogo.
-
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/87fa2d19-d802-4f03-befc-940b321fbc24" alt="external table gold">
-  <p><b>External Table</b></p>
-</div>
-
-<p align="left">
-</p>
+Com o access conector configurado ao storageaccount e as credenciais e external location criadas em nosso workspace, agora podemos criar os volumes conectados aos diretorios inbound, bronze, silver e gold do container nintendo.
 
 - Criação de volumes  no cátalogo.
 
@@ -215,34 +272,8 @@ Com o access conector configurado ao storageaccount e as credenciais e external 
 
 <p align="left">
 </p>
-  
-### 6.Conexão entre dbt e databricks
 
-- Com a conta no dbt criada, crie seu projeto.
-- Conecte o Databricks ao dbt utilizando as informações do cluster: o host, o caminho HTTP (http path) e a porta, que geralmente é a 443.
-
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/9c22d837-4467-4c0c-bf3b-8e13acd3c683" alt="dbt conection">
-  <p><b>Conectando dbt ao Databricks</b></p>
-</div>
-
-<p align="left">
-</p>
-
-- Conecte o GitHub ao dbt com um token de uso pessoal.
-- Use este link para clonar o repositório do projeto dbt: https://github.com/felipegoraroficial/dbt_project
-- Com as conexões realizadas, crie um arquivos YML para os schemas dev e prd em cada branch, que serão as fontes de busca para trabalhar com os dados no Databricks de forma separada por ambiente.
-- Ao final, teremos um pipeline de dado no dbt igual o da imagem abaixo
-
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/ebe099b3-0a17-4a2d-a6ec-f757f5899d3c" alt="dbt lineage">
-  <p><b>Fluxo de Processo dbt</b></p>
-</div>
-
-<p align="left">
-</p>
-
-### 7.Workflow Databricks
+### 6.Workflow Databricks
 
 - Crie dois workflows: um com a tag hml, que se refere ao fluxo de teste, e outro com a tag prd, que será o fluxo de produção.
 
@@ -277,6 +308,8 @@ Com o access conector configurado ao storageaccount e as credenciais e external 
 
 <p align="left">
 </p>
+
+### 7.Monitoramento Aplicação
 
 ### 8.Dashboard Monitoramento via Databricks
 
