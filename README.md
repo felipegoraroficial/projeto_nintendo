@@ -130,6 +130,16 @@ OBS: Será instalado os plugins do arquivo providers.tf
 <p align="left">
 </p>
 
+- Por fim, teremos o seginte recursos criados:
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/8d45f41a-50d6-4406-96cf-c802ae00a1fd" alt="terraform criado">
+  <p><b>Recursos Cloud Criado</b></p>
+</div>
+
+<p align="left">
+</p>
+
 ### 1.Criação do storageaccount
 
 - Com o grupo de recursos criado, o primeiro passo foi a criação de uma conta de armazenamento Gen2 com redundância local e camada hot, pois os dados serão acessados em alta frequência por se tratar de um processo streaming near real time.
@@ -161,6 +171,110 @@ OBS: O clico de vida de 1 dia de arquivos em stage inbound serve também para um
 </p>
 
 ### 2.Criação do Azure Function
+
+Com o AZ Function criado, precismos criar nossa primeira aplicação e podemos fazer isso dentro do VSCode:
+Instale as extensões: Azure Functions
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/e6aa0a44-b12c-4452-9754-d0c871e284bd" alt="extensão azure fucntion">
+  <p><b>Extensão Azure Function</b></p>
+</div>
+
+<p align="left">
+</p>
+
+Iinicando a criação do aplicativo, siga o passo a passo:
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/48ef7ef4-039d-43e9-9622-9d41f1c7b572" alt="criando app">
+  <p><b>Iniciando a Criação do App</b></p>
+</div>
+
+<p align="left">
+</p>
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/e53f9601-cd40-449f-b21d-12b756639339" alt="repos app">
+  <p><b>Repositório do App</b></p>
+</div>
+
+<p align="left">
+</p>
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/1a102abf-2017-468e-8727-997c640263dd" alt="langue app">
+  <p><b>Escolhendo linguagem do App</b></p>
+</div>
+
+<p align="left">
+</p>
+
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/e3c25a39-7a16-48b7-9dcc-3cb0af559ed1" alt="langue app versão">
+  <p><b>Escolhendo Versão</b></p>
+</div>
+
+<p align="left">
+</p>
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/47056eeb-f9b5-447a-a8e5-5eea8b399f4f" alt="app type">
+  <p><b>Tipo da Aplicação</b></p>
+</div>
+
+<p align="left">
+</p>
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/b406a9c3-3aab-439e-b60d-0228df420c0b" alt="app name">
+  <p><b>Nome da Aplicação</b></p>
+</div>
+
+<p align="left">
+</p>
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/64341595-c5f7-4fff-8545-7259cd22da43" alt="con app">
+  <p><b>Para aplicação TimeTrigger Insira o Cron da Aplicação</b></p>
+</div>
+
+<p align="left">
+</p>
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/6e9b111c-c12c-46d7-aa12-929931cb2175" alt="app criado">
+  <p><b>Criação da Aplicação Finalizada</b></p>
+</div>
+
+<p align="left">
+</p>
+
+Após a estruturação e configuração do app concluída, precismos deploya a aplicação para o Azure Function
+
+Execute o seguinte comando no terminal:
+
+`func azure functionapp publish appnintendo --python`
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/b0246d63-770d-4979-893a-b6279855b158" alt="app deploy">
+  <p><b>Saída ao finalziar o deploy</b></p>
+</div>
+
+<p align="left">
+</p>
+
+Agora nossa aplicação estará ativa e em execução no Azure fucntion
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/907b97e2-1383-45ae-a75f-dc7dbac172ca" alt="app az fucntion">
+  <p><b>Aplicações Ativas</b></p>
+</div>
+
+<p align="left">
+</p>
+
+
 
 ### 3.Criação do Azure Databricks
 
