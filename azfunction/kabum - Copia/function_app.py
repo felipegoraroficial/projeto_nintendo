@@ -93,7 +93,6 @@ def kabum_app(myTimer: func.TimerRequest) -> None:
                         'desconto': desconto,
                         'parcelamento': parcelamento,
                         'link': link,
-                        'origem': 'kabum',
                         'extract':data_atual
                     })
 

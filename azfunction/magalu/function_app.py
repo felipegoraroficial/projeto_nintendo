@@ -21,7 +21,7 @@ def kabum_app(myTimer: func.TimerRequest) -> None:
 
     logging.info('Python timer trigger function executed.')
 
-    url = "https://www.kabum.com.br/gamer/nintendo/consoles-nintendo"
+    url = "https://www.magazineluiza.com.br/busca/console+nintendo+switch/"
     ai_key = os.environ.get("OPENAI_API")
     storage_connection_string = os.environ.get("AzureStorageConnection")
     container_name = "nintendo"
@@ -93,7 +93,7 @@ def kabum_app(myTimer: func.TimerRequest) -> None:
                         'desconto': desconto,
                         'parcelamento': parcelamento,
                         'link': link,
-                        'origem': 'kabum',
+                        'origem': 'magalu',
                         'extract':data_atual
                     })
 
@@ -122,7 +122,7 @@ def kabum_app(myTimer: func.TimerRequest) -> None:
 
             # Gerar um nome de arquivo único (ex: nintendo_data_2025-06-07_19-51-08.json)
             timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            blob_name = f"inbound/kabum_{timestamp}.json"
+            blob_name = f"inbound/magalu_{timestamp}.json"
 
             # Serializar a lista de produtos para uma string JSON
             json_output = json.dumps(list_todos, indent=4, ensure_ascii=False)
