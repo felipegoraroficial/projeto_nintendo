@@ -140,6 +140,8 @@ OBS: Será instalado os plugins do arquivo providers.tf
 <p align="left">
 </p>
 
+## Construção do Ambiente Manualmente:
+
 ### 1.Criação do storageaccount
 
 - Com o grupo de recursos criado, o primeiro passo foi a criação de uma conta de armazenamento Gen2 com redundância local e camada hot, pois os dados serão acessados em alta frequência por se tratar de um processo streaming near real time.
@@ -299,7 +301,7 @@ Com o Azure Databricks criado sem nenhuma particularidade específica, basta ace
 <p align="left">
 </p>
 
-- Importe o reseguinte repositório em sua workspace:
+- Importe o seguinte repositório em sua workspace:
   https://github.com/felipegoraroficial/projeto_nintendo.git
 
   <div align="center">
@@ -375,17 +377,16 @@ https://learn.microsoft.com/en-us/azure/databricks/data-governance/unity-catalog
 <p align="left">
 </p>
 
-Com o access conector configurado ao storageaccount e as credenciais e external location criadas em nosso workspace, agora podemos criar os volumes conectados aos diretorios inbound, bronze, silver e gold do container nintendo.
-
-- Criação de volumes  no cátalogo.
+Com o access conector configurado ao storageaccount e as credenciais e external location criadas em nosso workspace, agora podemos criar os volumes conectados aos diretorios inbound, bronze, silver e gold do container nintendo. Seu catalogo deve estar parecido com o da imagem abaixo:
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/455722a8-8466-4e08-9e8c-6f86377bd2e7" alt="volumes databricks">
-  <p><b>Criação do Volumes no Databricks</b></p>
+  <img src="https://github.com/user-attachments/assets/bac9a97c-deff-4bec-9ba8-f8f0d55e4b04" alt="catalogo databricks">
 </div>
 
 <p align="left">
 </p>
+
+
 
 ### 6.Workflow Databricks
 
