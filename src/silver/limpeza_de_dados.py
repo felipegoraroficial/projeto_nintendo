@@ -9,8 +9,7 @@ import os
 
 def last_partition_delta(nome_tabela, coluna_particao):
 
-    spark = SparkSession.builder.getOrCreate()
-    
+   
     try:
         df = spark.read.format("delta").load(nome_tabela)
     except Exception as e:
@@ -302,7 +301,7 @@ def carregando_tabela_silver(df,delta_table_path):
         # --- Passo 2: Salvar o DataFrame no formato Delta ---
         df.write \
                         .format("delta") \
-                        .mode("append") \
+                        .mode("overwrite") \
                         .partitionBy("data_ref") \
                         .save(delta_table_path)
 
