@@ -1,0 +1,499 @@
+{
+  "datasets" : [ {
+    "name" : "757656a1",
+    "displayName" : "job",
+    "query" : "SELECT \r\n  account_id,\r\n  workspace_id,\r\n  job_id,\r\n  run_id,\r\n  period_start_time,\r\n  period_end_time,\r\n  task_key,\r\n  compute_ids,\r\n  result_state,\r\n  job_run_id,\r\n  parent_run_id,\r\n  CASE \r\n    WHEN result_state = 'SUCCESS' THEN 'SUCCESS'\r\n    WHEN result_state IN ('ERROR', 'FAILED', 'SKIPPED') THEN 'ERROR'\r\n    ELSE result_state\r\n  END AS result_state,\r\n  (unix_timestamp(period_end_time) - unix_timestamp(period_start_time)) / 60 AS duration_minutes\r\nFROM system.lakeflow.job_task_run_timeline\r\nWHERE period_start_time > (SELECT MIN(change_time) FROM system.lakeflow.jobs)\r\n  AND job_id IN (\r\n    SELECT DISTINCT job_id\r\n    FROM system.lakeflow.jobs\r\n    WHERE change_time > (SELECT MAX(delete_time) + INTERVAL 1 MINUTE FROM system.lakeflow.jobs)\r\n  )\r\nORDER BY duration_minutes DESC"
+  } ],
+  "pages" : [ {
+    "name" : "78435732",
+    "displayName" : "Workflow",
+    "layout" : [ {
+      "widget" : {
+        "name" : "7deb9199",
+        "queries" : [ {
+          "name" : "main_query",
+          "query" : {
+            "datasetName" : "757656a1",
+            "fields" : [ {
+              "name" : "countdistinct(job_run_id)",
+              "expression" : "COUNT(DISTINCT `job_run_id`)"
+            }, {
+              "name" : "result_state",
+              "expression" : "`result_state`"
+            } ],
+            "disaggregated" : false
+          }
+        } ],
+        "spec" : {
+          "version" : 3,
+          "widgetType" : "pie",
+          "encodings" : {
+            "angle" : {
+              "fieldName" : "countdistinct(job_run_id)",
+              "scale" : {
+                "type" : "quantitative"
+              },
+              "axis" : {
+                "hideTitle" : true
+              },
+              "displayName" : "Count of Unique job_run_id"
+            },
+            "color" : {
+              "fieldName" : "result_state",
+              "scale" : {
+                "type" : "categorical",
+                "mappings" : [ {
+                  "value" : "SUCCEEDED",
+                  "color" : {
+                    "themeColorType" : "visualizationColors",
+                    "position" : 3
+                  }
+                }, {
+                  "value" : "ERROR",
+                  "color" : {
+                    "themeColorType" : "visualizationColors",
+                    "position" : 4
+                  }
+                }, {
+                  "value" : "CANCELLED",
+                  "color" : {
+                    "themeColorType" : "visualizationColors",
+                    "position" : 10
+                  }
+                }, {
+                  "value" : "TIMED_OUT",
+                  "color" : {
+                    "themeColorType" : "visualizationColors",
+                    "position" : 2
+                  }
+                } ],
+                "sort" : {
+                  "by" : "angle-reversed"
+                }
+              },
+              "legend" : {
+                "title" : "State",
+                "position" : "bottom",
+                "hide" : false
+              },
+              "displayName" : "State"
+            },
+            "label" : {
+              "show" : true
+            }
+          },
+          "frame" : {
+            "showTitle" : true,
+            "title" : "Status Run",
+            "headerAlignment" : "center"
+          }
+        }
+      },
+      "position" : {
+        "x" : 0,
+        "y" : 0,
+        "width" : 2,
+        "height" : 6
+      }
+    }, {
+      "widget" : {
+        "name" : "c46ee057",
+        "queries" : [ {
+          "name" : "main_query",
+          "query" : {
+            "datasetName" : "757656a1",
+            "fields" : [ {
+              "name" : "result_state",
+              "expression" : "`result_state`"
+            }, {
+              "name" : "task_key",
+              "expression" : "`task_key`"
+            }, {
+              "name" : "count(run_id)",
+              "expression" : "COUNT(`run_id`)"
+            } ],
+            "filters" : [ {
+              "expression" : "`result_state` IN ('ERROR')"
+            } ],
+            "disaggregated" : false
+          }
+        } ],
+        "spec" : {
+          "version" : 3,
+          "widgetType" : "bar",
+          "encodings" : {
+            "x" : {
+              "fieldName" : "task_key",
+              "scale" : {
+                "type" : "categorical",
+                "sort" : {
+                  "by" : "y-reversed"
+                }
+              },
+              "axis" : {
+                "hideTitle" : true
+              },
+              "displayName" : "task_key"
+            },
+            "y" : {
+              "fieldName" : "count(run_id)",
+              "scale" : {
+                "type" : "quantitative",
+                "reverse" : false
+              },
+              "axis" : {
+                "hideTitle" : true,
+                "hideLabels" : false
+              },
+              "displayName" : "Count of run_id"
+            },
+            "color" : {
+              "fieldName" : "result_state",
+              "scale" : {
+                "type" : "categorical",
+                "mappings" : [ {
+                  "value" : "ERROR",
+                  "color" : {
+                    "themeColorType" : "visualizationColors",
+                    "position" : 4
+                  }
+                } ]
+              },
+              "legend" : {
+                "hideTitle" : true,
+                "hide" : true
+              },
+              "displayName" : "result_state"
+            }
+          },
+          "frame" : {
+            "title" : "Task Errors",
+            "showTitle" : true,
+            "headerAlignment" : "center"
+          },
+          "mark" : {
+            "layout" : "group"
+          }
+        }
+      },
+      "position" : {
+        "x" : 2,
+        "y" : 0,
+        "width" : 4,
+        "height" : 6
+      }
+    }, {
+      "widget" : {
+        "name" : "8e640b7c",
+        "queries" : [ {
+          "name" : "main_query",
+          "query" : {
+            "datasetName" : "757656a1",
+            "fields" : [ {
+              "name" : "run_id",
+              "expression" : "`run_id`"
+            }, {
+              "name" : "period_start_time",
+              "expression" : "`period_start_time`"
+            }, {
+              "name" : "period_end_time",
+              "expression" : "`period_end_time`"
+            }, {
+              "name" : "duration_minutes",
+              "expression" : "`duration_minutes`"
+            } ],
+            "disaggregated" : true
+          }
+        } ],
+        "spec" : {
+          "version" : 1,
+          "widgetType" : "table",
+          "encodings" : {
+            "columns" : [ {
+              "fieldName" : "run_id",
+              "booleanValues" : [ "false", "true" ],
+              "imageUrlTemplate" : "{{ @ }}",
+              "imageTitleTemplate" : "{{ @ }}",
+              "imageWidth" : "",
+              "imageHeight" : "",
+              "linkUrlTemplate" : "{{ @ }}",
+              "linkTextTemplate" : "{{ @ }}",
+              "linkTitleTemplate" : "{{ @ }}",
+              "linkOpenInNewTab" : true,
+              "type" : "string",
+              "displayAs" : "string",
+              "visible" : true,
+              "order" : 100003,
+              "title" : "run_id",
+              "allowSearch" : false,
+              "alignContent" : "left",
+              "allowHTML" : false,
+              "highlightLinks" : false,
+              "useMonospaceFont" : false,
+              "preserveWhitespace" : false,
+              "displayName" : "run_id"
+            }, {
+              "fieldName" : "period_start_time",
+              "dateTimeFormat" : "YYYY-MM-DD HH:mm:ss.SSS",
+              "booleanValues" : [ "false", "true" ],
+              "imageUrlTemplate" : "{{ @ }}",
+              "imageTitleTemplate" : "{{ @ }}",
+              "imageWidth" : "",
+              "imageHeight" : "",
+              "linkUrlTemplate" : "{{ @ }}",
+              "linkTextTemplate" : "{{ @ }}",
+              "linkTitleTemplate" : "{{ @ }}",
+              "linkOpenInNewTab" : true,
+              "type" : "datetime",
+              "displayAs" : "datetime",
+              "visible" : true,
+              "order" : 100004,
+              "title" : "period_start_time",
+              "allowSearch" : false,
+              "alignContent" : "right",
+              "allowHTML" : false,
+              "highlightLinks" : false,
+              "useMonospaceFont" : false,
+              "preserveWhitespace" : false,
+              "displayName" : "period_start_time"
+            }, {
+              "fieldName" : "period_end_time",
+              "dateTimeFormat" : "YYYY-MM-DD HH:mm:ss.SSS",
+              "booleanValues" : [ "false", "true" ],
+              "imageUrlTemplate" : "{{ @ }}",
+              "imageTitleTemplate" : "{{ @ }}",
+              "imageWidth" : "",
+              "imageHeight" : "",
+              "linkUrlTemplate" : "{{ @ }}",
+              "linkTextTemplate" : "{{ @ }}",
+              "linkTitleTemplate" : "{{ @ }}",
+              "linkOpenInNewTab" : true,
+              "type" : "datetime",
+              "displayAs" : "datetime",
+              "visible" : true,
+              "order" : 100005,
+              "title" : "period_end_time",
+              "allowSearch" : false,
+              "alignContent" : "right",
+              "allowHTML" : false,
+              "highlightLinks" : false,
+              "useMonospaceFont" : false,
+              "preserveWhitespace" : false,
+              "displayName" : "period_end_time"
+            }, {
+              "fieldName" : "duration_minutes",
+              "numberFormat" : "0.00",
+              "booleanValues" : [ "false", "true" ],
+              "imageUrlTemplate" : "{{ @ }}",
+              "imageTitleTemplate" : "{{ @ }}",
+              "imageWidth" : "",
+              "imageHeight" : "",
+              "linkUrlTemplate" : "{{ @ }}",
+              "linkTextTemplate" : "{{ @ }}",
+              "linkTitleTemplate" : "{{ @ }}",
+              "linkOpenInNewTab" : true,
+              "type" : "float",
+              "displayAs" : "number",
+              "visible" : true,
+              "order" : 100011,
+              "title" : "duration_minutes",
+              "allowSearch" : false,
+              "alignContent" : "right",
+              "allowHTML" : false,
+              "highlightLinks" : false,
+              "useMonospaceFont" : false,
+              "preserveWhitespace" : false,
+              "displayName" : "duration_minutes"
+            } ]
+          },
+          "invisibleColumns" : [ {
+            "booleanValues" : [ "false", "true" ],
+            "imageUrlTemplate" : "{{ @ }}",
+            "imageTitleTemplate" : "{{ @ }}",
+            "imageWidth" : "",
+            "imageHeight" : "",
+            "linkUrlTemplate" : "{{ @ }}",
+            "linkTextTemplate" : "{{ @ }}",
+            "linkTitleTemplate" : "{{ @ }}",
+            "linkOpenInNewTab" : true,
+            "name" : "account_id",
+            "type" : "string",
+            "displayAs" : "string",
+            "order" : 100000,
+            "title" : "account_id",
+            "allowSearch" : false,
+            "alignContent" : "left",
+            "allowHTML" : false,
+            "highlightLinks" : false,
+            "useMonospaceFont" : false,
+            "preserveWhitespace" : false
+          }, {
+            "booleanValues" : [ "false", "true" ],
+            "imageUrlTemplate" : "{{ @ }}",
+            "imageTitleTemplate" : "{{ @ }}",
+            "imageWidth" : "",
+            "imageHeight" : "",
+            "linkUrlTemplate" : "{{ @ }}",
+            "linkTextTemplate" : "{{ @ }}",
+            "linkTitleTemplate" : "{{ @ }}",
+            "linkOpenInNewTab" : true,
+            "name" : "workspace_id",
+            "type" : "string",
+            "displayAs" : "string",
+            "order" : 100001,
+            "title" : "workspace_id",
+            "allowSearch" : false,
+            "alignContent" : "left",
+            "allowHTML" : false,
+            "highlightLinks" : false,
+            "useMonospaceFont" : false,
+            "preserveWhitespace" : false
+          }, {
+            "booleanValues" : [ "false", "true" ],
+            "imageUrlTemplate" : "{{ @ }}",
+            "imageTitleTemplate" : "{{ @ }}",
+            "imageWidth" : "",
+            "imageHeight" : "",
+            "linkUrlTemplate" : "{{ @ }}",
+            "linkTextTemplate" : "{{ @ }}",
+            "linkTitleTemplate" : "{{ @ }}",
+            "linkOpenInNewTab" : true,
+            "name" : "job_id",
+            "type" : "string",
+            "displayAs" : "string",
+            "order" : 100002,
+            "title" : "job_id",
+            "allowSearch" : false,
+            "alignContent" : "left",
+            "allowHTML" : false,
+            "highlightLinks" : false,
+            "useMonospaceFont" : false,
+            "preserveWhitespace" : false
+          }, {
+            "booleanValues" : [ "false", "true" ],
+            "imageUrlTemplate" : "{{ @ }}",
+            "imageTitleTemplate" : "{{ @ }}",
+            "imageWidth" : "",
+            "imageHeight" : "",
+            "linkUrlTemplate" : "{{ @ }}",
+            "linkTextTemplate" : "{{ @ }}",
+            "linkTitleTemplate" : "{{ @ }}",
+            "linkOpenInNewTab" : true,
+            "name" : "task_key",
+            "type" : "string",
+            "displayAs" : "string",
+            "order" : 100006,
+            "title" : "task_key",
+            "allowSearch" : false,
+            "alignContent" : "left",
+            "allowHTML" : false,
+            "highlightLinks" : false,
+            "useMonospaceFont" : false,
+            "preserveWhitespace" : false
+          }, {
+            "booleanValues" : [ "false", "true" ],
+            "imageUrlTemplate" : "{{ @ }}",
+            "imageTitleTemplate" : "{{ @ }}",
+            "imageWidth" : "",
+            "imageHeight" : "",
+            "linkUrlTemplate" : "{{ @ }}",
+            "linkTextTemplate" : "{{ @ }}",
+            "linkTitleTemplate" : "{{ @ }}",
+            "linkOpenInNewTab" : true,
+            "name" : "compute_ids",
+            "type" : "complex",
+            "displayAs" : "json",
+            "order" : 100007,
+            "title" : "compute_ids",
+            "allowSearch" : false,
+            "alignContent" : "left",
+            "allowHTML" : false,
+            "highlightLinks" : false,
+            "useMonospaceFont" : false,
+            "preserveWhitespace" : false
+          }, {
+            "booleanValues" : [ "false", "true" ],
+            "imageUrlTemplate" : "{{ @ }}",
+            "imageTitleTemplate" : "{{ @ }}",
+            "imageWidth" : "",
+            "imageHeight" : "",
+            "linkUrlTemplate" : "{{ @ }}",
+            "linkTextTemplate" : "{{ @ }}",
+            "linkTitleTemplate" : "{{ @ }}",
+            "linkOpenInNewTab" : true,
+            "name" : "result_state",
+            "type" : "string",
+            "displayAs" : "string",
+            "order" : 100008,
+            "title" : "result_state",
+            "allowSearch" : false,
+            "alignContent" : "left",
+            "allowHTML" : false,
+            "highlightLinks" : false,
+            "useMonospaceFont" : false,
+            "preserveWhitespace" : false
+          }, {
+            "booleanValues" : [ "false", "true" ],
+            "imageUrlTemplate" : "{{ @ }}",
+            "imageTitleTemplate" : "{{ @ }}",
+            "imageWidth" : "",
+            "imageHeight" : "",
+            "linkUrlTemplate" : "{{ @ }}",
+            "linkTextTemplate" : "{{ @ }}",
+            "linkTitleTemplate" : "{{ @ }}",
+            "linkOpenInNewTab" : true,
+            "name" : "job_run_id",
+            "type" : "string",
+            "displayAs" : "string",
+            "order" : 100009,
+            "title" : "job_run_id",
+            "allowSearch" : false,
+            "alignContent" : "left",
+            "allowHTML" : false,
+            "highlightLinks" : false,
+            "useMonospaceFont" : false,
+            "preserveWhitespace" : false
+          }, {
+            "booleanValues" : [ "false", "true" ],
+            "imageUrlTemplate" : "{{ @ }}",
+            "imageTitleTemplate" : "{{ @ }}",
+            "imageWidth" : "",
+            "imageHeight" : "",
+            "linkUrlTemplate" : "{{ @ }}",
+            "linkTextTemplate" : "{{ @ }}",
+            "linkTitleTemplate" : "{{ @ }}",
+            "linkOpenInNewTab" : true,
+            "name" : "parent_run_id",
+            "type" : "string",
+            "displayAs" : "string",
+            "order" : 100010,
+            "title" : "parent_run_id",
+            "allowSearch" : false,
+            "alignContent" : "left",
+            "allowHTML" : false,
+            "highlightLinks" : false,
+            "useMonospaceFont" : false,
+            "preserveWhitespace" : false
+          } ],
+          "allowHTMLByDefault" : false,
+          "itemsPerPage" : 25,
+          "paginationSize" : "default",
+          "condensed" : true,
+          "withRowNumber" : false,
+          "frame" : {
+            "showTitle" : true,
+            "headerAlignment" : "center",
+            "title" : "Durantion Runs"
+          }
+        }
+      },
+      "position" : {
+        "x" : 0,
+        "y" : 6,
+        "width" : 6,
+        "height" : 7
+      }
+    } ],
+    "pageType" : "PAGE_TYPE_CANVAS"
+  } ]
+}

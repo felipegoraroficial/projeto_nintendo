@@ -1,0 +1,19 @@
+{
+  "datasets" : [ {
+    "name" : "dde9b467",
+    "displayName" : "usage",
+    "query" : "SELECT \r\n    u.usage_metadata['cluster_id'] AS cluster_id,\r\n    u.usage_start_time,\r\n    u.usage_end_time,\r\n    (unix_timestamp(u.usage_end_time) - unix_timestamp(u.usage_start_time)) / 60 AS duration_minutes,\r\n    u.usage_quantity AS dbu_usage\r\nFROM `system`.billing.usage u\r\nINNER JOIN (\r\n    SELECT DISTINCT cluster_id\r\n    FROM `system`.compute.clusters\r\n    WHERE workspace_id = '1979788420159277'\r\n) c ON u.usage_metadata['cluster_id'] = c.cluster_id;"
+  }, {
+    "name" : "8e222c96",
+    "displayName" : "cluster",
+    "query" : "SELECT DISTINCT cluster_id, cluster_name, owned_by, create_time, delete_time, driver_node_type, worker_node_type, worker_count, min_autoscale_workers, max_autoscale_workers, auto_termination_minutes, enable_elastic_disk, dbr_version, change_time, change_date, data_security_mode, policy_id \r\nFROM `system`.compute.clusters\r\nWHERE workspace_id = '1979788420159277'"
+  } ],
+  "pages" : [ {
+    "name" : "d997bfdf",
+    "displayName" : "Página sem título",
+    "pageType" : "PAGE_TYPE_CANVAS"
+  } ],
+  "uiSettings" : {
+    "theme" : { }
+  }
+}
