@@ -2,6 +2,7 @@
 from pyspark.sql.types import StructType, StructField, StringType, DoubleType, DateType, LongType 
 from pyspark.sql.functions import concat_ws, col, regexp_replace, when, lit, desc, max, to_date, regexp_extract, count
 from pyspark.sql import SparkSession
+from pyspark.dbutils import DBUtils
 import re
 import os
 

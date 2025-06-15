@@ -2,19 +2,38 @@
 from pyspark.sql.types import StructType, StructField, StringType, DoubleType, DateType, LongType 
 from pyspark.sql.functions import concat_ws, col, regexp_replace, when, lit, desc, max, to_date, regexp_extract, count
 from pyspark.sql import SparkSession
+from pyspark.dbutils import DBUtils
 import re
 import os
 
 # COMMAND ----------
 
 def last_partition_delta(nome_tabela, coluna_particao):
-
    
+    spark = SparkSession.builder.getOrCreate()
+    
+    spark = SparkSession.builder.getOrCreate()
+    dbutils = DBUtils(spark) 
+
+    try:
+
+        dbutils.fs.ls(nome_tabela)
+        print(f"Caminho '{nome_tabela}' existe. Tentando carregar como Delta.")
+    except Exception as e:
+        print(f"O caminho '{nome_tabela}' não existe ou não é acessível. Detalhe: {e}. Gerando um DataFrame vazio.")
+        return spark.createDataFrame([], schema=json_schema)
+
     try:
         df = spark.read.format("delta").load(nome_tabela)
+        print(f"Tabela Delta '{nome_tabela}' carregada com sucesso.")
     except Exception as e:
-        print(f"Erro ao acessar a tabela '{nome_tabela}': {e}")
-        return spark.createDataFrame([], schema=df.schema if 'df' in locals() else [])
+
+        print(f"Erro ao carregar a tabela Delta '{nome_tabela}'. Provavelmente não é uma tabela Delta válida. Detalhe do erro: {e}")
+        return spark.createDataFrame([], schema=json_schema)
+    
+    if df.rdd.isEmpty():
+        print(f"Tabela '{nome_tabela}' foi carregada como Delta VÁLIDA, mas está completamente vazia. Retornando DataFrame vazio com o schema definido.")
+        return spark.createDataFrame([], schema=json_schema)
 
     ultima_particao_df = df.select(max(coluna_particao).alias("ultima_particao"))
     ultima_particao = ultima_particao_df.first()["ultima_particao"] if ultima_particao_df.first() else None
@@ -36,7 +55,7 @@ def last_partition_delta(nome_tabela, coluna_particao):
         return spark.createDataFrame([], schema=df.schema)
 
 # Caminho para a external location do diretório bronze
-bronze_path = f"/Volumes/nintendodatabricksx9y9jj_workspace/nintendo/bronze"
+bronze_path = f"/Volumes/nintendodatabricksp1okle_workspace/nintendo/bronze"
 
 # Lendo arquivo Delta do diretório bronze pela ultima partição
 df = last_partition_delta(bronze_path, "data_ref")
@@ -64,10 +83,6 @@ def filter_not_null_value(df, coluna):
     return dffiltered
 
 dffiltered = filter_not_null_value(df, "codigo")
-
-# COMMAND ----------
-
-display(dffiltered)
 
 # COMMAND ----------
 
@@ -219,10 +234,6 @@ def replace_nulls_with_zero(df):
     return df
 
 df_no_null_numeric = replace_nulls_with_zero(df_numeric)
-
-# COMMAND ----------
-
-display(df_no_null_numeric)
 
 # COMMAND ----------
 
