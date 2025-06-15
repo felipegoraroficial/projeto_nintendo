@@ -374,7 +374,7 @@ def carregando_tabela_silver(df,delta_table_path):
         print(f"Ocorreu um erro geral ao salvar ou verificar a tabela Delta: {e}")
 
 # Caminho para a external location do diretório silver
-silver_path = f"/Volumes/nintendodatabricksx9y9jj_workspace/nintendo/silver"
+silver_path = f"/Volumes/nintendodatabricksp1okle_workspace/nintendo/silver"
 
 carregando_tabela_silver(df_lite, silver_path)
 
