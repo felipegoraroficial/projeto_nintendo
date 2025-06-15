@@ -5,7 +5,7 @@ resource "azurerm_resource_group" "rgroup" {
 }
 
 resource "azurerm_storage_account" "stracc" {
-  name                     = "nintendostorage"
+  name                     = "nintendostorageaccount"
   location                 = azurerm_resource_group.rgroup.location
   resource_group_name      = azurerm_resource_group.rgroup.name
   account_tier             = "Standard"
@@ -18,7 +18,7 @@ resource "azurerm_storage_account" "stracc" {
 resource "azurerm_role_assignment" "user_storage_contributor" {
   scope                = azurerm_storage_account.stracc.id
   role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = "8216f753-2fad-43f1-ac88-b7698c9786f0"
+  principal_id         = "28c2397e-a895-4d5f-8e3c-d2c4e9452cd4"
 }
 
 resource "azurerm_storage_container" "containernintnedo" {
@@ -65,7 +65,7 @@ resource "azurerm_service_plan" "srvplan" {
 }
 
 resource "azurerm_linux_function_app" "funcappcons" {
-  name                       = "appnintendo"
+  name                       = "appfuncnintendoprojeto"
   location                   = azurerm_resource_group.rgroup.location
   resource_group_name        = azurerm_resource_group.rgroup.name
   storage_account_name       = azurerm_storage_account.stracc.name
@@ -82,6 +82,26 @@ resource "azurerm_linux_function_app" "funcappcons" {
     "FUNCTIONS_WORKER_RUNTIME" = "python"
     "AzureWebJobsStorage"      = azurerm_storage_account.stracc.primary_connection_string
   }
+}
+
+resource "azurerm_dashboard_grafana" "grafanamanager" {
+  name                = "managedgrafanainstance"
+  resource_group_name = azurerm_resource_group.rgroup.name
+  location            = azurerm_resource_group.rgroup.location
+  sku                 = "Standard"
+  api_key_enabled     = true
+
+
+  public_network_access_enabled = true
+
+  identity {
+    type = "SystemAssigned"
+  }
+}
+
+
+output "grafana_endpoint" {
+  value = azurerm_dashboard_grafana.grafanamanager.endpoint
 }
 
 resource "random_string" "naming" {
@@ -102,19 +122,14 @@ resource "azurerm_databricks_workspace" "databricks_workspace" {
   managed_resource_group_name = "${local.prefix}-workspace-rg"
 }
 
-resource "databricks_user" "felipe_user" {
-  user_name    = "felipegoraro@outlook.com.br"
-  display_name = "Felipe Pegoraro"
-}
-
 resource "databricks_cluster" "dtb_cluster" {
   cluster_name            = "nintendo"
-  spark_version           = "16.1.x-scala2.12"
-  node_type_id            = "Standard_DS3_v2"
-  driver_node_type_id     = "Standard_DS3_v2"
+  spark_version           = "15.4.x-scala2.12"
+  node_type_id            = "Standard_D4s_v3"
+  driver_node_type_id     = "Standard_D4s_v3"
   autotermination_minutes = 10
   enable_elastic_disk     = true
-  single_user_name        = databricks_user.felipe_user.user_name
+  single_user_name        = "felipegoraro@outlook.com"
   data_security_mode      = "SINGLE_USER"
   runtime_engine          = "PHOTON"
 
@@ -123,9 +138,6 @@ resource "databricks_cluster" "dtb_cluster" {
     max_workers = 2
   }
 
-  spark_conf = {
-    "spark.master" = "local[*, 4]"
-  }
 }
 
 
@@ -143,3 +155,4 @@ resource "azurerm_role_assignment" "dac_storage_contributor" {
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = azurerm_databricks_access_connector.dac.identity[0].principal_id
 }
+
