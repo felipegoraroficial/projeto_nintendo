@@ -64,9 +64,11 @@ Para monitoramento da Aplicação no Azure Function foi utilizando o App Insight
 
 Com esses passos, toda a construção dos recursos cloud e atribuição de funções serão realizadas.
 
-- Necessário instalar CLI da Azure e Terraform na maquina.
+- Necessário instalar CLI da Azure e Terraform na maquina e realizar o login com sua conta da Azure.
 - Para verificar se o terraform está instalado em sua maquina, execute o seguinte comando no terminal:
 `terraform --version`
+OBS: A versão da imagem abaixo é necessária para executar comando para criação do recurso Databricks
+
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/86edf789-0727-45a7-a633-0432e92a72b3" alt="versão terraform">
@@ -75,6 +77,19 @@ Com esses passos, toda a construção dos recursos cloud e atribuição de funç
 
 <p align="left">
 </p>
+
+- Para realizar o login com sua conta, execute o seguinte comando no terminal:
+`az login`
+Isso irá fazer com que seja aberto uma pagina no browser para realizar a conexão e para verificar se a conexão foi realizada com sucesso execute o seguinte comando:
+` az account show --output json`
+
+- Para que os recursos sejam criados, é necessários registra-los antes com os seguintes comandos:
+Databricks: `Register-AzResourceProvider -ProviderNamespace Microsoft.Databricks`
+Grafana Manage: `az provider register --namespace Microsoft.Dashboard`
+AZ Function: `az provider register --namespace Microsoft.Web`
+StorageAccount: `az provider register --namespace Microsoft.Storage`
+
+Após essas execuções, podemos iniciar a criação de recursos com Terraform
 
 - Para iniciar o terraform, execute o seguinte comando no terminal:
 `terraform init`
