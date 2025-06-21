@@ -2,7 +2,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~>3.51.0"
+      version = "~>3.90.0"
     }
     azuread = {
       source  = "hashicorp/azuread"
@@ -14,15 +14,18 @@ terraform {
     }
     databricks = {
       source  = "databricks/databricks"
-      version = "~> 1.25"
+      version = ">= 1.31.0"
     }
   }
 }
 
 
 provider "azurerm" {
-  skip_provider_registration = true
-  features {}
+  features {
+    resource_group {
+      prevent_deletion_if_contains_resources = true
+    }
+  }
 }
 
 provider "databricks" {

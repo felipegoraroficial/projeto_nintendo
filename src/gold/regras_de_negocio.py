@@ -2,6 +2,7 @@
 from pyspark.sql.types import StructType, StructField, StringType, DoubleType, DateType, LongType 
 from pyspark.sql.functions import concat_ws, col, regexp_replace, when, lit, desc, max, to_date, regexp_extract, count
 from pyspark.sql import SparkSession
+from pyspark.dbutils import DBUtils
 import re
 import os
 
@@ -36,7 +37,7 @@ def last_partition_delta(nome_tabela, coluna_particao):
         return spark.createDataFrame([], schema=df.schema)
 
 # Caminho para a external location do diretório bronze
-bronze_path = f"/Volumes/nintendodatabricksx9y9jj_workspace/nintendo/silver"
+bronze_path = f"/Volumes/nintendodatabricksp1okle_workspace/nintendo/silver"
 
 # Lendo arquivo Delta do diretório bronze pela ultima partição
 df = last_partition_delta(bronze_path, "data_ref")
@@ -196,6 +197,6 @@ def carregando_tabela_gold(df,delta_table_path):
         print(f"Ocorreu um erro geral ao salvar ou verificar a tabela Delta: {e}")
 
 # Caminho para a external location do diretório gold
-gold_path = f"/Volumes/nintendodatabricksx9y9jj_workspace/nintendo/gold"
+gold_path = f"/Volumes/nintendodatabricksp1okle_workspace/nintendo/gold"
 
 carregando_tabela_gold(df_recomendacao, gold_path)
