@@ -21,7 +21,7 @@ def magalu_app(myTimer: func.TimerRequest) -> None:
 
     logging.info('Python timer trigger function executed.')
 
-    url = "https://www.magazineluiza.com.br/busca/console%2Bnintendo%2Bswitch/?filters=seller---magazineluiza%2Bentity---console"
+    url = "https://www.magazineluiza.com.br/busca/console%2Bnintendo%2Bswitch/?filters=entity---console%2Bbrand---nintendo"
     ai_key = os.environ.get("OPENAI_API")
     storage_connection_string = os.environ.get("AzureStorageConnection")
     container_name = "nintendo"
@@ -93,7 +93,7 @@ def magalu_app(myTimer: func.TimerRequest) -> None:
                         'desconto': desconto,
                         'parcelamento': parcelamento,
                         'link': link,
-                        'origem': 'kabum',
+                        'origem': 'magalu',
                         'extract':data_atual
                     })
 
