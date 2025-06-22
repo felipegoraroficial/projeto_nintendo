@@ -218,3 +218,17 @@ resource "databricks_git_credential" "github_connection" {
   git_provider          = "gitHub"
   personal_access_token = var.github_token
 }
+
+resource "databricks_repo" "my_git_folder" {
+
+  url = "https://github.com/felipegoraroficial/projeto_nintendo.git"
+
+  path = "/Repos/${databricks_user.felipe_user.user_name}/projeto_nintendo"
+
+  branch = "v2"
+
+  depends_on = [
+    azurerm_databricks_workspace.databricks_workspace,
+    databricks_git_credential.github_connection
+  ]
+}
