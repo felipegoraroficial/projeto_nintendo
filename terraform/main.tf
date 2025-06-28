@@ -64,6 +64,13 @@ resource "azurerm_service_plan" "srvplan" {
 
 }
 
+resource "azurerm_application_insights" "app_insights" {
+  name                = "nintendo-appinsights"
+  location            = azurerm_resource_group.rgroup.location
+  resource_group_name = azurerm_resource_group.rgroup.name
+  application_type    = "other"
+}
+
 resource "azurerm_linux_function_app" "funcmagalu" {
   name                       = "appfuncmagalu"
   location                   = azurerm_resource_group.rgroup.location
@@ -79,9 +86,11 @@ resource "azurerm_linux_function_app" "funcmagalu" {
   }
 
   app_settings = {
-    "FUNCTIONS_WORKER_RUNTIME" = "python"
-    "AzureStorageConnection"   = azurerm_storage_account.stracc.primary_connection_string
-    "OPENAI_API"               = var.openai_api_key
+    "FUNCTIONS_WORKER_RUNTIME"              = "python"
+    "AzureStorageConnection"                = azurerm_storage_account.stracc.primary_connection_string
+    "OPENAI_API"                            = var.openai_api_key
+    "APPINSIGHTS_INSTRUMENTATIONKEY"        = azurerm_application_insights.app_insights.instrumentation_key
+    "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.app_insights.connection_string
   }
 }
 
@@ -101,9 +110,11 @@ resource "azurerm_linux_function_app" "funckabum" {
   }
 
   app_settings = {
-    "FUNCTIONS_WORKER_RUNTIME" = "python"
-    "AzureStorageConnection"   = azurerm_storage_account.stracc.primary_connection_string
-    "OPENAI_API"               = var.openai_api_key
+    "FUNCTIONS_WORKER_RUNTIME"              = "python"
+    "AzureStorageConnection"                = azurerm_storage_account.stracc.primary_connection_string
+    "OPENAI_API"                            = var.openai_api_key
+    "APPINSIGHTS_INSTRUMENTATIONKEY"        = azurerm_application_insights.app_insights.instrumentation_key
+    "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.app_insights.connection_string
   }
 }
 
@@ -129,26 +140,6 @@ resource "azurerm_storage_management_policy" "inbound_delete_after_1_day" {
       }
     }
   }
-}
-
-resource "azurerm_dashboard_grafana" "grafanamanager" {
-  name                = "managedgrafanainstance"
-  resource_group_name = azurerm_resource_group.rgroup.name
-  location            = azurerm_resource_group.rgroup.location
-  sku                 = "Standard"
-  api_key_enabled     = true
-
-
-  public_network_access_enabled = true
-
-  identity {
-    type = "SystemAssigned"
-  }
-}
-
-
-output "grafana_endpoint" {
-  value = azurerm_dashboard_grafana.grafanamanager.endpoint
 }
 
 
