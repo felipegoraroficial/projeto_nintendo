@@ -22,8 +22,7 @@ Com Azure Databricks como plataforma de pipeline de dados na arquitetura medalh�
 
 Foi criado um Job dentro da plataforma Databricks que está schedulado sempre que um novo arquivo no diretorio inbound no container da StorageAccount é adicionado.
 
-Para o monitoramento desses jobs na paltaforma do Databricks, foi criado um painel utilizando Cluster Serveless do Data Warehouse conectado a tabelas da System Tables.
-Para monitoramento da Aplicação no Azure Function foi utilizando o App Insights para monitorar os logs da aplicação.
+Para o monitoramento desses jobs na paltaforma do Databricks e todos os recursos da Azure, foi criado painéis no Grafna utilizando Cluster Serveless Warehouse que  conecta a tabelas da System Tables no Databricks e Azure Monitor com Aplications Insights para monitoramento das functions no AZ Functions e StorageAccount.
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/fb0c3732-0456-40a4-af88-67646ce63654" alt="Desenho Técnico">
@@ -57,8 +56,8 @@ Para monitoramento da Aplicação no Azure Function foi utilizando o App Insight
     - **Benefício**: Permite uma modelagem de dados analíticos eficiente e confiável, combinando a familiaridade do SQL com a escalabilidade do Spark e a integridade do Delta Lake.
 
 6. **Monitoramento de Processos**:
-    - **Objetivo**: Monitoramento nativo da Plataforma Databricks e App Insights do Azure Function.
-    - **Benefício**: Monitoramento e velocidade na interpretação de incidente para atuar em correções e/ou manutenções.
+    - **Objetivo**: Monitoramento de dos recurtsos e status do projeto com Grafna.
+    - **Benefício**: Monitoramento de todas as funcionalidades e recursos da arquitetura do projeto em um único local.
 
 ## Construção do Ambiente com Terraform:
 
@@ -148,7 +147,7 @@ OBS: Será instalado os plugins do arquivo providers.tf
 - Por fim, teremos o seginte recursos criados:
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/8d45f41a-50d6-4406-96cf-c802ae00a1fd" alt="terraform criado">
+  <img src="https://github.com/user-attachments/assets/2e2693bf-bc82-4905-8337-4500ee0baf0e" alt="terraform criado">
   <p><b>Recursos Cloud Criado</b></p>
 </div>
 
@@ -320,7 +319,7 @@ Com o Azure Databricks criado sem nenhuma particularidade específica, basta ace
   https://github.com/felipegoraroficial/projeto_nintendo.git
 
   <div align="center">
-  <img src="https://github.com/user-attachments/assets/6a0d0f95-6dea-4ea5-b055-4ccccf2ab823" alt="Workspace">
+  <img src="https://github.com/user-attachments/assets/26e57091-2f68-4724-919d-a32c4556ee6b" alt="Workspace">
   <p><b>Workspace</b></p>
 </div>
 
@@ -435,36 +434,67 @@ Com o access conector configurado ao storageaccount e as credenciais e external 
 - Teremos um pipeline parecido com o da imagem abaixo:
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/93fa08db-d369-40c1-9c37-2321646efdcb" alt="workflows">
-  <p><b>Workflows do Databricks</b></p>
+  <img src="https://github.com/user-attachments/assets/36fdb143-0f28-4558-bf41-4de48a0b8571" alt="workflows medalion">
+  <p><b>Medalion Workflows do Databricks</b></p>
 </div>
 
-
-### 7.Monitoramento Aplicação
-
-- Com aplication Insghts podemos verificar os logs da aplicação e definir alertas para receber aviso em caso de falha da aplicação ou referente a uma condição especifica:
+- Para a execução dos Jobs foi utilizado um cluster de jobs afim de minimizar consumo de DBUs com o cluster de uso pessoal:
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/fd99f0e7-b18d-41e7-abac-cf2f4cbdeed0" alt="triggers jobs">
+  <img src="https://github.com/user-attachments/assets/6b3fd527-6199-4251-95aa-74c7ed562f9d" alt="job cluster">
+  <p><b>Job Cluster no Databricks</b></p>
 </div>
 
-### 8.Dashboard Monitoramento via Databricks
+### 7.Monitoramento Grafna
+
+- Conexão Databricks com Grafana:
+Utilziando o Cluster Serverless Starter Warehouse
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/99bb03ff-c23f-4215-936b-54ad73388899" alt="dashboard-monitoramento">
-  <p><b>Dashboard de Monitoramento de Jobs no Databricks</b></p>
+  <img src="https://github.com/user-attachments/assets/b15df42b-9df3-4e4c-8218-f4af13de4858" alt="sql cluster">
+  <p><b>Serverless Warehouse</b></p>
 </div>
 
-<p align="left">
-</p>
+Conectando cluster ao Grafana
+
+OBS: Necessário gerar um Token
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/98165ea3-e252-462a-8e15-7620cc1dee93" alt="dashboard-monitoramento">
-  <p><b>Dashboard de Monitoramente de Leitura e Escrita das Tabelas no Databricks</b></p>
+  <img src="https://github.com/user-attachments/assets/dcc2b314-4290-454c-b25a-4a6c39888d4b" alt="conection">
+  <p><b>Conectando Grafna Databricks</b></p>
 </div>
 
-<p align="left">
-</p>
+Teremos um dashboard de monitoramento:
+
+  <div align="center">
+  <img src="https://github.com/user-attachments/assets/49d4a589-9856-45cf-ad31-d4ecfc7b9110" alt="databricks monitoring">
+  <p><b>Monitoramento Grafna Databricks</b></p>
+</div>
+
+- Conexão Azure Monitor com Grafana:
+
+Para a criação do moledos ao Azure Monitor foi integrado templates já existentes no Grafana com o Applications Insigths:
+
+link: https://grafana.com/grafana/dashboards/
+
+  <div align="center">
+  <img src="https://github.com/user-attachments/assets/6660d754-eb2c-4710-8869-96d1963bf830" alt="applications insigths">
+  <p><b>Dashboards Grafna</b></p>
+</div>
+
+Para conectar o Az Monitor ao Grafana, é necessário a criação de um Registro de Aplicativo:
+
+  <div align="center">
+  <img src="https://github.com/user-attachments/assets/ad72034a-1638-43bb-9d97-36b6c8ab6483" alt="applications insigths">
+  <p><b>Dashboards Grafna</b></p>
+</div>
+
+Após importar o dashboard da sua prefêrencia, teremos um dashboards iguala  este:
+
+  <div align="center">
+  <img src="https://github.com/user-attachments/assets/07d4bba4-01d6-43f0-b1a2-6c67cad65fe8" alt="storage monitoring">
+  <p><b>Monitoramento de StorageAccount</b></p>
+</div>
 
 
   
