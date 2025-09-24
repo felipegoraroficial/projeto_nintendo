@@ -4,6 +4,40 @@ resource "azurerm_resource_group" "rgroup" {
 
 }
 
+# Criação do App Registration no Azure AD
+resource "azuread_application" "appreg" {
+  display_name = "nintendo-aplication"
+}
+
+# Criação do Service Principal para o App Registration
+resource "azuread_service_principal" "appreg_sp" {
+  client_id = azuread_application.appreg.application_id
+}
+
+# Criação do Client Secret para o App Registration
+resource "azuread_application_password" "appreg_secret" {
+  application_object_id = azuread_application.appreg.object_id
+  end_date_relative     = "8760h"
+}
+
+data "azurerm_client_config" "current" {}
+
+output "client_id" {
+  description = "O client_id da aplicação (Application ID)"
+  value       = azuread_application.appreg.application_id
+}
+
+output "tenant_id" {
+  description = "O tenant_id do Azure AD"
+  value       = data.azurerm_client_config.current.tenant_id
+}
+
+output "client_secret" {
+  description = "O valor do client secret gerado para o app registration"
+  value       = azuread_application_password.appreg_secret.value
+  sensitive   = true
+}
+
 resource "azurerm_storage_account" "stracc" {
   name                     = "nintendostorageaccount"
   location                 = azurerm_resource_group.rgroup.location
@@ -15,23 +49,10 @@ resource "azurerm_storage_account" "stracc" {
 
 }
 
-resource "azurerm_role_assignment" "user_storage_contributor" {
-  scope                = azurerm_storage_account.stracc.id
-  role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = var.principal_id
-}
-
 resource "azurerm_storage_container" "containernintnedo" {
   name                  = "nintendo"
   storage_account_name  = azurerm_storage_account.stracc.name
   container_access_type = "private"
-}
-
-resource "azurerm_storage_data_lake_gen2_path" "inbound" {
-  storage_account_id = azurerm_storage_account.stracc.id
-  filesystem_name    = azurerm_storage_container.containernintnedo.name
-  path               = "inbound"
-  resource           = "directory"
 }
 
 resource "azurerm_storage_data_lake_gen2_path" "bronze" {
@@ -41,18 +62,84 @@ resource "azurerm_storage_data_lake_gen2_path" "bronze" {
   resource           = "directory"
 }
 
-resource "azurerm_storage_data_lake_gen2_path" "silver" {
-  storage_account_id = azurerm_storage_account.stracc.id
-  filesystem_name    = azurerm_storage_container.containernintnedo.name
-  path               = "silver"
-  resource           = "directory"
+# Criação do Key Vault
+resource "azurerm_key_vault" "kv" {
+  name                       = "nintendokeyvaultproject"
+  location                   = azurerm_resource_group.rgroup.location
+  resource_group_name        = azurerm_resource_group.rgroup.name
+  tenant_id                  = data.azurerm_client_config.current.tenant_id
+  sku_name                   = "standard"
+  soft_delete_retention_days = 7
+
+  access_policy {
+    tenant_id          = data.azurerm_client_config.current.tenant_id
+    object_id          = data.azurerm_client_config.current.object_id
+    secret_permissions = ["Get", "Set", "List", "Delete", "Recover", "Purge"]
+  }
 }
 
-resource "azurerm_storage_data_lake_gen2_path" "gold" {
-  storage_account_id = azurerm_storage_account.stracc.id
-  filesystem_name    = azurerm_storage_container.containernintnedo.name
-  path               = "gold"
-  resource           = "directory"
+# Criação do Secret no Key Vault para armazenar a chave de acesso do Storage Account
+resource "azurerm_key_vault_secret" "storage_key" {
+  name         = "nintendo-storage-account-key-value"
+  value        = azurerm_storage_account.stracc.primary_access_key
+  key_vault_id = azurerm_key_vault.kv.id
+  depends_on   = [azurerm_key_vault.kv, azurerm_storage_account.stracc]
+}
+
+# Armazenar o Client Secret do App Registration no Key Vault
+resource "azurerm_key_vault_secret" "appreg_client_secret" {
+  name         = "nintendo-aplication-client-secret-value"
+  value        = azuread_application_password.appreg_secret.value
+  key_vault_id = azurerm_key_vault.kv.id
+
+  depends_on = [
+    azurerm_key_vault.kv,
+    azuread_application_password.appreg_secret
+  ]
+}
+
+# Incluíndo permissão de acesso ao Key Vault para o App Registration
+resource "azurerm_role_assignment" "appreg_blob_contributor" {
+  scope                = azurerm_storage_account.stracc.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azuread_service_principal.appreg_sp.object_id
+  depends_on = [
+    azurerm_storage_account.stracc,
+    azuread_service_principal.appreg_sp
+  ]
+}
+
+resource "azurerm_role_assignment" "appreg_kv_access" {
+  scope                = azurerm_key_vault.kv.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azuread_service_principal.appreg_sp.object_id
+}
+
+resource "azurerm_eventhub_namespace" "eventhub" {
+  name                = "nintendoproject"
+  location            = azurerm_resource_group.rgroup.location
+  resource_group_name = azurerm_resource_group.rgroup.name
+  sku                 = "Basic"
+  capacity            = 1
+
+}
+
+resource "azurerm_eventhub" "hub" {
+  name                = "nintendohub"
+  namespace_name      = azurerm_eventhub_namespace.eventhub.name
+  resource_group_name = azurerm_resource_group.rgroup.name
+  partition_count     = 1
+  message_retention   = 1
+}
+
+resource "azurerm_eventhub_authorization_rule" "rulehub" {
+  name                = "nintendohubpolicy"
+  namespace_name      = azurerm_eventhub_namespace.eventhub.name
+  eventhub_name       = azurerm_eventhub.hub.name
+  resource_group_name = azurerm_resource_group.rgroup.name
+  listen              = false
+  send                = true
+  manage              = false
 }
 
 resource "azurerm_service_plan" "srvplan" {
@@ -71,8 +158,8 @@ resource "azurerm_application_insights" "app_insights" {
   application_type    = "other"
 }
 
-resource "azurerm_linux_function_app" "funcmagalu" {
-  name                       = "appfuncmagalu"
+resource "azurerm_linux_function_app" "funcnintendo" {
+  name                       = "appfuncnintendo"
   location                   = azurerm_resource_group.rgroup.location
   resource_group_name        = azurerm_resource_group.rgroup.name
   storage_account_name       = azurerm_storage_account.stracc.name
@@ -88,77 +175,19 @@ resource "azurerm_linux_function_app" "funcmagalu" {
   app_settings = {
     "FUNCTIONS_WORKER_RUNTIME"              = "python"
     "AzureStorageConnection"                = azurerm_storage_account.stracc.primary_connection_string
+    "EventHubConnection"                    = azurerm_eventhub_authorization_rule.rulehub.primary_connection_string 
     "OPENAI_API"                            = var.openai_api_key
     "APPINSIGHTS_INSTRUMENTATIONKEY"        = azurerm_application_insights.app_insights.instrumentation_key
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.app_insights.connection_string
   }
-}
-
-
-resource "azurerm_linux_function_app" "funckabum" {
-  name                       = "appfunckabum"
-  location                   = azurerm_resource_group.rgroup.location
-  resource_group_name        = azurerm_resource_group.rgroup.name
-  storage_account_name       = azurerm_storage_account.stracc.name
-  storage_account_access_key = azurerm_storage_account.stracc.primary_access_key
-  service_plan_id            = azurerm_service_plan.srvplan.id
-
-  site_config {
-    application_stack {
-      python_version = "3.10"
-    }
-  }
-
-  app_settings = {
-    "FUNCTIONS_WORKER_RUNTIME"              = "python"
-    "AzureStorageConnection"                = azurerm_storage_account.stracc.primary_connection_string
-    "OPENAI_API"                            = var.openai_api_key
-    "APPINSIGHTS_INSTRUMENTATIONKEY"        = azurerm_application_insights.app_insights.instrumentation_key
-    "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.app_insights.connection_string
-  }
-}
-
-
-resource "azurerm_storage_management_policy" "inbound_delete_after_1_day" {
-  storage_account_id = azurerm_storage_account.stracc.id
-
-  rule {
-    name    = "delete-inbound-after-1-day"
-    enabled = true
-
-
-    filters {
-      prefix_match = ["nintendo/inbound"]
-      blob_types   = ["blockBlob"]
-    }
-
-
-    actions {
-      base_blob {
-
-        delete_after_days_since_creation_greater_than = 1
-      }
-    }
-  }
-}
-
-
-resource "random_string" "naming" {
-  special = false
-  upper   = false
-  length  = 6
-}
-
-locals {
-  prefix = "nintendodatabricks${random_string.naming.result}"
 }
 
 resource "azurerm_databricks_workspace" "databricks_workspace" {
-  name                        = "${local.prefix}-workspace"
+  name                        = "nintendodatabricks-workspace"
   resource_group_name         = azurerm_resource_group.rgroup.name
   location                    = azurerm_resource_group.rgroup.location
   sku                         = "trial"
-  managed_resource_group_name = "${local.prefix}-workspace-rg"
+  managed_resource_group_name = "nintendodatabricks-workspace-rg"
 
 }
 
@@ -172,10 +201,43 @@ resource "azurerm_databricks_access_connector" "dac" {
   }
 }
 
+resource "azurerm_role_assignment" "appreg_databricks_contributor" {
+  scope                = azurerm_databricks_workspace.databricks_workspace.id
+  role_definition_name = "Contributor"
+  principal_id         = azuread_service_principal.appreg_sp.object_id
+
+  depends_on = [
+    azurerm_databricks_workspace.databricks_workspace
+  ]
+}
+
+
 resource "azurerm_role_assignment" "dac_storage_contributor" {
   scope                = azurerm_storage_account.stracc.id
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = azurerm_databricks_access_connector.dac.identity[0].principal_id
+}
+
+resource "azurerm_role_assignment" "databricks_kv_access" {
+  scope                = azurerm_key_vault.kv.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azurerm_databricks_access_connector.dac.identity[0].principal_id
+}
+
+# Criação do Secret Scope no Databricks, utilizando o Key Vault
+resource "databricks_secret_scope" "keyvault_scope" {
+  name                     = "nintendo-keyvault-scope"
+  initial_manage_principal = "users"
+
+  keyvault_metadata {
+    resource_id = azurerm_key_vault.kv.id
+    dns_name    = azurerm_key_vault.kv.vault_uri
+  }
+
+  depends_on = [
+    azurerm_databricks_workspace.databricks_workspace,
+    azurerm_role_assignment.databricks_kv_access
+  ]
 }
 
 resource "databricks_user" "felipe_user" {
@@ -200,6 +262,10 @@ resource "databricks_cluster" "dtb_cluster" {
   autoscale {
     min_workers = 1
     max_workers = 2
+  }
+
+  spark_conf = {
+    "fs.azure.account.key.${azurerm_storage_account.stracc.name}.dfs.core.windows.net" = "{{secrets/${databricks_secret_scope.keyvault_scope.name}/${azurerm_key_vault_secret.storage_key.name}}}"
   }
 
 }
