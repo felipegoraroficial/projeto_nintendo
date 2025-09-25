@@ -30,7 +30,7 @@
 				}
 			},
 			{
-				"name": "Notebookbronze",
+				"name": "Create-Pipeline",
 				"type": "DatabricksNotebook",
 				"dependsOn": [
 					{
@@ -49,7 +49,7 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"notebookPath": "/Repos/felipegoraro@outlook.com/projeto_nintendo/src/medalion/bronze"
+					"notebookPath": "/Repos/felipegoraro@outlook.com/projeto_nintendo/src/config/pipeline"
 				},
 				"linkedServiceName": {
 					"referenceName": "AzureDatabricks",
@@ -57,11 +57,11 @@
 				}
 			},
 			{
-				"name": "Notebooksilver",
-				"type": "DatabricksNotebook",
+				"name": "Jobmedalion",
+				"type": "DatabricksJob",
 				"dependsOn": [
 					{
-						"activity": "Notebookbronze",
+						"activity": "Create-Pipeline",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -76,7 +76,7 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"notebookPath": "/Repos/felipegoraro@outlook.com/projeto_nintendo/src/medalion/silver"
+					"jobId": "964759035635113"
 				},
 				"linkedServiceName": {
 					"referenceName": "AzureDatabricks",
@@ -84,11 +84,11 @@
 				}
 			},
 			{
-				"name": "Notebookgold",
-				"type": "DatabricksNotebook",
+				"name": "Jobmodeling",
+				"type": "DatabricksJob",
 				"dependsOn": [
 					{
-						"activity": "Notebooksilver",
+						"activity": "Jobmedalion",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -103,7 +103,7 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"notebookPath": "/Repos/felipegoraro@outlook.com/projeto_nintendo/src/medalion/gold"
+					"jobId": "262365611896644"
 				},
 				"linkedServiceName": {
 					"referenceName": "AzureDatabricks",
