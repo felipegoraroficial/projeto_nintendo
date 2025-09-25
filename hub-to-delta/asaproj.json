@@ -1,0 +1,22 @@
+{
+    "name": "hub-to-delta",
+    "startFile": "transformation.asaql",
+    "configurations": [
+        {
+            "filePath": "JobConfig.json",
+            "subType": "JobConfig"
+        },
+        {
+            "filePath": "Outputs/b3fb2b5f-246e-160d-a420-59eeb9215954.json",
+            "subType": "Output"
+        },
+        {
+            "filePath": "Outputs/93e2e9de-b3e7-09bb-7de9-92488b8f05fb.json",
+            "subType": "Output"
+        },
+        {
+            "filePath": "Inputs/028ba826-83d2-7651-c403-504e7355eee6-input.json",
+            "subType": "Input"
+        }
+    ]
+}
