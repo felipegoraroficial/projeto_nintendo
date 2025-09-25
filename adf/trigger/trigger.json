@@ -1,0 +1,24 @@
+{
+	"name": "trigger",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "pipeline",
+					"type": "PipelineReference"
+				}
+			}
+		],
+		"type": "BlobEventsTrigger",
+		"typeProperties": {
+			"blobPathBeginsWith": "/nintendo/blobs/inbound/",
+			"ignoreEmptyBlobs": true,
+			"scope": "/subscriptions/da483b95-1caf-404c-bfe4-36abef87f6e6/resourceGroups/nintendoproject/providers/Microsoft.Storage/storageAccounts/nintendostorageaccount",
+			"events": [
+				"Microsoft.Storage.BlobCreated"
+			]
+		}
+	}
+}

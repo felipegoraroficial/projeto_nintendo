@@ -1,0 +1,22 @@
+{
+    "Name": "93e2e9de-b3e7-09bb-7de9-92488b8f05fb",
+    "DataSourceType": "Blob Storage",
+    "BlobStorageProperties": {
+        "StorageAccounts": [
+            {
+                "AccountName": "nintendostorageaccount",
+                "AccountKey": null
+            }
+        ],
+        "Container": "azure-webjobs-hosts",
+        "PathPattern": null,
+        "DateFormat": null,
+        "TimeFormat": null,
+        "AuthenticationMode": "ConnectionString",
+        "BlobWriteMode": null
+    },
+    "DataSourceCredentialDomain": "0ce61bd0-3e0f-4644-8d09-8a2f5f25ba4d.StreamAnalystics",
+    "MinimumRows": 2000,
+    "MaximumTime": "00:01:00",
+    "ScriptType": "Output"
+}
