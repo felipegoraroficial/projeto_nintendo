@@ -55,6 +55,13 @@ resource "azurerm_storage_container" "containernintnedo" {
   container_access_type = "private"
 }
 
+resource "azurerm_storage_data_lake_gen2_path" "inbound" {
+  storage_account_id = azurerm_storage_account.stracc.id
+  filesystem_name    = azurerm_storage_container.containernintnedo.name
+  path               = "inbound"
+  resource           = "directory"
+}
+
 resource "azurerm_storage_data_lake_gen2_path" "bronze" {
   storage_account_id = azurerm_storage_account.stracc.id
   filesystem_name    = azurerm_storage_container.containernintnedo.name
@@ -113,6 +120,41 @@ resource "azurerm_role_assignment" "appreg_kv_access" {
   scope                = azurerm_key_vault.kv.id
   role_definition_name = "Key Vault Secrets User"
   principal_id         = azuread_service_principal.appreg_sp.object_id
+}
+
+# Criação da política de gerenciamento do Storage Account para deletar blobs após 7 dia
+resource "azurerm_storage_management_policy" "inbound_delete_after_1_day" {
+  storage_account_id = azurerm_storage_account.stracc.id
+
+  rule {
+    name    = "delete-inbound-after-7-day"
+    enabled = true
+
+
+    filters {
+      prefix_match = ["nintendo/inbound"]
+      blob_types   = ["blockBlob"]
+    }
+
+
+    actions {
+      base_blob {
+
+        delete_after_days_since_creation_greater_than = 7
+      }
+    }
+  }
+}
+
+# Criação do Data Factory
+resource "azurerm_data_factory" "adf" {
+  name                = "nintendoadf"
+  location            = azurerm_resource_group.rgroup.location
+  resource_group_name = azurerm_resource_group.rgroup.name
+
+  identity {
+    type = "SystemAssigned"
+  }
 }
 
 resource "azurerm_eventhub_namespace" "eventhub" {
@@ -268,6 +310,14 @@ resource "databricks_cluster" "dtb_cluster" {
     "fs.azure.account.key.${azurerm_storage_account.stracc.name}.dfs.core.windows.net" = "{{secrets/${databricks_secret_scope.keyvault_scope.name}/${azurerm_key_vault_secret.storage_key.name}}}"
   }
 
+}
+
+resource "databricks_library" "pytest_lib" {
+  cluster_id = databricks_cluster.dtb_cluster.id
+
+  pypi {
+    package = "pytest"
+  }
 }
 
 resource "databricks_git_credential" "github_connection" {
