@@ -68,8 +68,8 @@
 						}
 					},
 					{
-						"name": "Notebookbronze",
-						"type": "DatabricksNotebook",
+						"name": "Jobmedalion",
+						"type": "DatabricksJob",
 						"dependsOn": [
 							{
 								"activity": "Distinct-Data",
@@ -87,7 +87,7 @@
 						},
 						"userProperties": [],
 						"typeProperties": {
-							"notebookPath": "/Repos/felipegoraro@outlook.com/projeto_nintendo/src/medalion/bronze"
+							"jobId": "964759035635113"
 						},
 						"linkedServiceName": {
 							"referenceName": "AzureDatabricks",
@@ -95,11 +95,11 @@
 						}
 					},
 					{
-						"name": "Notebooksilver",
-						"type": "DatabricksNotebook",
+						"name": "Jobmodeling",
+						"type": "DatabricksJob",
 						"dependsOn": [
 							{
-								"activity": "Notebookbronze",
+								"activity": "Jobmedalion",
 								"dependencyConditions": [
 									"Succeeded"
 								]
@@ -114,34 +114,7 @@
 						},
 						"userProperties": [],
 						"typeProperties": {
-							"notebookPath": "/Repos/felipegoraro@outlook.com/projeto_nintendo/src/medalion/silver"
-						},
-						"linkedServiceName": {
-							"referenceName": "AzureDatabricks",
-							"type": "LinkedServiceReference"
-						}
-					},
-					{
-						"name": "Notebookgold",
-						"type": "DatabricksNotebook",
-						"dependsOn": [
-							{
-								"activity": "Notebooksilver",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "0.12:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"notebookPath": "/Repos/felipegoraro@outlook.com/projeto_nintendo/src/medalion/gold"
+							"jobId": "262365611896644"
 						},
 						"linkedServiceName": {
 							"referenceName": "AzureDatabricks",
