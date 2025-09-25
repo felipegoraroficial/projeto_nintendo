@@ -282,6 +282,11 @@ resource "databricks_secret_scope" "keyvault_scope" {
   ]
 }
 
+resource "databricks_service_principal" "app_sp" {
+  application_id = azuread_application.appreg.application_id
+  display_name   = "nintendo-databricks-sp"
+}
+
 resource "databricks_user" "felipe_user" {
   user_name             = "felipegoraro@outlook.com"
   display_name          = "Felipe Pegoraro"
