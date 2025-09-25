@@ -1,0 +1,9 @@
+{
+	"name": "nintendoadf",
+	"location": "australiaeast",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "fcaee4e9-f743-42d2-afb2-5444516bbce8",
+		"tenantId": "1a7a4b2b-0e66-4ce2-b5cc-5916ccca0206"
+	}
+}
