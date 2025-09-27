@@ -217,7 +217,7 @@ resource "azurerm_linux_function_app" "funcnintendo" {
   app_settings = {
     "FUNCTIONS_WORKER_RUNTIME"              = "python"
     "AzureStorageConnection"                = azurerm_storage_account.stracc.primary_connection_string
-    "EventHubConnection"                    = azurerm_eventhub_authorization_rule.rulehub.primary_connection_string 
+    "EventHubConnection"                    = azurerm_eventhub_authorization_rule.rulehub.primary_connection_string
     "OPENAI_API"                            = var.openai_api_key
     "APPINSIGHTS_INSTRUMENTATIONKEY"        = azurerm_application_insights.app_insights.instrumentation_key
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.app_insights.connection_string
