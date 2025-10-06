@@ -25,7 +25,7 @@ Foi criado um Job dentro da plataforma Databricks que está schedulado sempre qu
 Para o monitoramento desses jobs na paltaforma do Databricks e todos os recursos da Azure, foi criado painéis no Grafna utilizando Cluster Serveless Warehouse que  conecta a tabelas da System Tables no Databricks e Azure Monitor com Aplications Insights para monitoramento das functions no AZ Functions e StorageAccount.
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/fb0c3732-0456-40a4-af88-67646ce63654" alt="Desenho Técnico">
+  <img src="https://github.com/user-attachments/assets/4d5a7b36-5d15-4751-9665-8849e4fffbd6" alt="Desenho Técnico">
   <p><b>Desenho Técnico</b></p>
 </div>
 
