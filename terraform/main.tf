@@ -326,7 +326,7 @@ resource "databricks_repo" "my_git_folder" {
 
   path = "/Repos/${databricks_user.felipe_user.user_name}/projeto_nintendo"
 
-  branch = "v3"
+  branch = "v2"
 
   depends_on = [
     azurerm_databricks_workspace.databricks_workspace,
