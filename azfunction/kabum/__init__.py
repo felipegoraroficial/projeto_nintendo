@@ -2,6 +2,7 @@ import logging
 import azure.functions as func
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
 import requests
+import typing
 import os
 from bs4 import BeautifulSoup
 import json
@@ -11,17 +12,13 @@ from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import StrOutputParser
 
-app = func.FunctionApp()
-
-@app.timer_trigger(schedule="0 */10 * * * *", arg_name="myTimer", run_on_startup=False,
-              use_monitor=False) 
-def magalu_app(myTimer: func.TimerRequest) -> None:
+def main(myTimer: func.TimerRequest, outputEvent: func.Out[typing.List[str]]) -> None:
     if myTimer.past_due:
         logging.info('The timer is past due!')
 
     logging.info('Python timer trigger function executed.')
 
-    url = "https://www.magazineluiza.com.br/busca/console%2Bnintendo%2Bswitch/?filters=entity---console%2Bbrand---nintendo"
+    url = "https://www.kabum.com.br/gamer/nintendo/consoles-nintendo"
     ai_key = os.environ.get("OPENAI_API")
     storage_connection_string = os.environ.get("AzureStorageConnection")
     container_name = "nintendo"
@@ -51,7 +48,7 @@ def magalu_app(myTimer: func.TimerRequest) -> None:
 
         sopa_bonita = BeautifulSoup(filetext, 'html.parser')
 
-        llm = ChatOpenAI(temperature=0.7, model="gpt-4.1-nano", openai_api_key=ai_key)
+        llm = ChatOpenAI(temperature=0.7, model="gpt-4o-mini", openai_api_key=ai_key)
 
         prompt = ChatPromptTemplate.from_messages([
         ("system", "Você é um especialista em extrair informações relevantes de conteúdo HTML. Analise o conteúdo fornecido e capture as informações solicitadas pelo usuário."),
@@ -93,7 +90,7 @@ def magalu_app(myTimer: func.TimerRequest) -> None:
                         'desconto': desconto,
                         'parcelamento': parcelamento,
                         'link': link,
-                        'origem': 'magalu',
+                        'origem': 'kabum',
                         'extract':data_atual
                     })
 
@@ -102,44 +99,12 @@ def magalu_app(myTimer: func.TimerRequest) -> None:
             logging.warning("Nenhum JSON encontrado na resposta da LLM.")
             return []
 
-    def send_to_blobstorage(list_todos):
-
-        try:
-            # Criar um cliente de serviço Blob usando a string de conexão
-            blob_service_client = BlobServiceClient.from_connection_string(storage_connection_string)
-            
-            # Obter um cliente para o container
-            container_client = blob_service_client.get_container_client(container_name)
-
-            # Criar o container se ele não existir
-            try:
-                container_client.create_container()
-                logging.info(f"Container '{container_name}' criado com sucesso.")
-            except Exception as e:
-                # Ignorar o erro se o container já existir
-                if "ContainerAlreadyExists" not in str(e):
-                    logging.error(f"Erro ao criar o container '{container_name}': {e}")
-
-            # Gerar um nome de arquivo único (ex: nintendo_data_2025-06-07_19-51-08.json)
-            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            blob_name = f"inbound/magalu_{timestamp}.json"
-
-            # Serializar a lista de produtos para uma string JSON
-            json_output = json.dumps(list_todos, indent=4, ensure_ascii=False)
-
-            # Obter um cliente de blob e fazer o upload
-            blob_client = container_client.get_blob_client(blob_name)
-            blob_client.upload_blob(json_output, overwrite=True)
-
-            logging.info(f"Dados enviados com sucesso para o blob '{blob_name}' no container '{container_name}'.")
-
-        except Exception as e:
-            logging.error(f"Erro ao enviar dados para o Blob Storage: {e}")
-
     filetext = get_html(url)
     if filetext:
         list_todos = get_content(filetext)
         if list_todos:
-            send_to_blobstorage(list_todos)
+            # Envia um JSON por produto para o Event Hub
+            for produto in list_todos:
+                outputEvent.set(json.dumps(produto, ensure_ascii=False))
         else:
-            logging.warning("Nenhum conteúdo para enviar ao blobstorage.")
+            logging.warning("Nenhum conteúdo para enviar ao Event Hub.")

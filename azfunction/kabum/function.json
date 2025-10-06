@@ -1,0 +1,20 @@
+{
+  "bindings": [
+    {
+      "name": "myTimer",
+      "type": "timerTrigger",
+      "direction": "in",
+      "schedule": "0 */10 * * * *"
+    },
+    {
+      "name": "outputEvent",
+      "type": "eventHub",
+      "direction": "out",
+      "connection": "EventHubConnection",
+      "eventHubName": "nintendohub",
+      "partitionKey": "{codigo}"
+    }
+  ]
+}
+
+

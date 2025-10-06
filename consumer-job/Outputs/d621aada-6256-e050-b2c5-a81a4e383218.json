@@ -1,0 +1,27 @@
+{
+    "Name": "d621aada-6256-e050-b2c5-a81a4e383218",
+    "DataSourceType": "Blob Storage",
+    "BlobStorageProperties": {
+        "StorageAccounts": [
+            {
+                "AccountName": "nintendostorageaccount",
+                "AccountKey": null
+            }
+        ],
+        "Container": "nintendo",
+        "PathPattern": "inbound/{date}_{time}",
+        "DateFormat": "yyyy-MM-dd",
+        "TimeFormat": "HH",
+        "AuthenticationMode": "ConnectionString",
+        "BlobWriteMode": "Once"
+    },
+    "DataSourceCredentialDomain": "f9e0d641-8d89-4852-a209-a3de851debcd.StreamAnalystics",
+    "Serialization": {
+        "Type": "Json",
+        "Encoding": "UTF8",
+        "Format": "LineSeparated"
+    },
+    "MinimumRows": 2000,
+    "MaximumTime": "00:01:00",
+    "ScriptType": "Output"
+}

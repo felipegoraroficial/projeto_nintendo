@@ -1,0 +1,18 @@
+{
+    "name": "consumer-job",
+    "startFile": "transformation.asaql",
+    "configurations": [
+        {
+            "filePath": "JobConfig.json",
+            "subType": "JobConfig"
+        },
+        {
+            "filePath": "Outputs/d621aada-6256-e050-b2c5-a81a4e383218.json",
+            "subType": "Output"
+        },
+        {
+            "filePath": "Inputs/94ff2d4d-5df3-376b-11e0-7ce633be4e05-input.json",
+            "subType": "Input"
+        }
+    ]
+}
