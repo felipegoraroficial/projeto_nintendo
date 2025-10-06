@@ -146,17 +146,6 @@ resource "azurerm_storage_management_policy" "inbound_delete_after_1_day" {
   }
 }
 
-# Criação do Data Factory
-resource "azurerm_data_factory" "adf" {
-  name                = "nintendoadf"
-  location            = azurerm_resource_group.rgroup.location
-  resource_group_name = azurerm_resource_group.rgroup.name
-
-  identity {
-    type = "SystemAssigned"
-  }
-}
-
 resource "azurerm_eventhub_namespace" "eventhub" {
   name                = "nintendoproject"
   location            = azurerm_resource_group.rgroup.location
