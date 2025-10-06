@@ -170,7 +170,7 @@ resource "azurerm_eventhub" "hub" {
   name                = "nintendohub"
   namespace_name      = azurerm_eventhub_namespace.eventhub.name
   resource_group_name = azurerm_resource_group.rgroup.name
-  partition_count     = 1
+  partition_count     = 10
   message_retention   = 1
 }
 
@@ -337,7 +337,7 @@ resource "databricks_repo" "my_git_folder" {
 
   path = "/Repos/${databricks_user.felipe_user.user_name}/projeto_nintendo"
 
-  branch = "v2"
+  branch = "v3"
 
   depends_on = [
     azurerm_databricks_workspace.databricks_workspace,
