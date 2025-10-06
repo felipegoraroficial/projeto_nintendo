@@ -6,8 +6,8 @@
     "EventsOutOfOrderMaxDelayInSeconds": 0,
     "EventsOutOfOrderPolicy": "Adjust",
     "Sku": {
-        "Name": "Standard",
-        "StreamingUnits": "3"
+        "Name": "StandardV2",
+        "StreamingUnits": "1/3"
     },
     "CompatibilityLevel": "1.2",
     "UseSystemAssignedIdentity": true,

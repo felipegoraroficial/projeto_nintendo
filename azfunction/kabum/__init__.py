@@ -2,6 +2,7 @@ import logging
 import azure.functions as func
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
 import requests
+import typing
 import os
 from bs4 import BeautifulSoup
 import json
@@ -11,7 +12,7 @@ from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import StrOutputParser
 
-def main(myTimer: func.TimerRequest, outputEvent: func.Out[str]) -> None:
+def main(myTimer: func.TimerRequest, outputEvent: func.Out[typing.List[str]]) -> None:
     if myTimer.past_due:
         logging.info('The timer is past due!')
 

@@ -11,7 +11,10 @@
       "type": "eventHub",
       "direction": "out",
       "connection": "EventHubConnection",
-      "eventHubName": "nintendohub"
+      "eventHubName": "nintendohub",
+      "partitionKey": "{codigo}"
     }
   ]
 }
+
+

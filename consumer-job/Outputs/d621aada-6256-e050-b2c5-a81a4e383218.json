@@ -1,5 +1,5 @@
 {
-    "Name": "b3fb2b5f-246e-160d-a420-59eeb9215954",
+    "Name": "d621aada-6256-e050-b2c5-a81a4e383218",
     "DataSourceType": "Blob Storage",
     "BlobStorageProperties": {
         "StorageAccounts": [
@@ -9,13 +9,13 @@
             }
         ],
         "Container": "nintendo",
-        "PathPattern": "inbound",
+        "PathPattern": "inbound/{date}_{time}",
         "DateFormat": "yyyy-MM-dd",
         "TimeFormat": "HH",
-        "AuthenticationMode": "Msi",
-        "BlobWriteMode": "Append"
+        "AuthenticationMode": "ConnectionString",
+        "BlobWriteMode": "Once"
     },
-    "DataSourceCredentialDomain": null,
+    "DataSourceCredentialDomain": "f9e0d641-8d89-4852-a209-a3de851debcd.StreamAnalystics",
     "Serialization": {
         "Type": "Json",
         "Encoding": "UTF8",
