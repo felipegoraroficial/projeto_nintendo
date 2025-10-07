@@ -409,6 +409,33 @@ https://learn.microsoft.com/en-us/azure/databricks/data-governance/unity-catalog
 <p align="left">
 </p>
 
+- E o seu pipeline DLT ficará assim:
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/12103506-2e90-4f09-8ae4-8e476d8b1f59" alt="DLT pipeline">
+</div>
+
+<p align="left">
+</p>
+
+- Usando expect, com DLT, podemos gerar um relátorio no pipeline identificando a qualidade de dados gerado com DLT:
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/bbcadb96-c0f3-4ad4-8b16-2e29560e4bad" alt="DLT EXPECT">
+</div>
+
+<p align="left">
+</p>
+
+- Por fim, podemos verificar a linhagem de dados na tabela conforme o exemplo abaixo:
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/99336475-1535-403b-b605-b59b7caec5b2" alt="Lineage">
+</div>
+
+<p align="left">
+</p>
+
 - Crie um workflows: inclua tags e descrição se preferir. É muito util incluir tags e descrição para identificação de Jobs quandos e trata de um ambiente com diversos Jobs criado.
 
 - Adicione a seguinte Agenda ao Job: Chegada do ficheiro. Este tipo de ativação do Job faz com que o start do fluxo se inicie a partir de novos arquivos que são adicionados em um local especificado
