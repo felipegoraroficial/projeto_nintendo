@@ -71,6 +71,22 @@ Para o monitoramento desses jobs na paltaforma do Databricks e todos os recursos
 
 ## Construção do Ambiente com Terraform:
 
+A estrutura do Terraform é referente ao modelo abaixo:
+
+```plaintext
+terraform/
+│
+├── .terraform/                 # Pasta interna do Terraform (plugins, cache, metadados)
+├── .gitignore                   # Arquivo para ignorar arquivos/pastas no controle de versão
+├── .terraform.lock.hcl          # Lock file com versões exatas de provedores usados
+├── main.tf                      # Arquivo principal com recursos e definições da infraestrutura
+├── providers.tf                 # Configuração dos provedores (ex.: Azure, AWS, GCP)
+├── terraform.tfstate            # Estado atual da infraestrutura gerenciado pelo Terraform
+├── terraform.tfstate.backup     # Backup do estado anterior
+├── variables.tf                 # Declaração de variáveis utilizadas nos módulos e recursos
+└── versions.tf                  # Definição da versão do Terraform e restrições de provedores
+````
+
 Com esses passos, toda a construção dos recursos cloud e atribuição de funções serão realizadas.
 
 - Necessário instalar CLI da Azure e Terraform na maquina e realizar o login com sua conta da Azure.
