@@ -468,19 +468,19 @@ Para a criação do moledos ao Azure Monitor foi integrado templates já existen
 
 link: https://grafana.com/grafana/dashboards/
 
+OBS: Para conectar o Az Monitor ao Grafana, é necessário a criação de um Registro de Aplicativo
+
+  <div align="center">
+  <img src="https://github.com/user-attachments/assets/ad72034a-1638-43bb-9d97-36b6c8ab6483" alt="coenxão az monitor">
+  <p><b>Conexão AZ Monitor</b></p>
+</div>
+
+Após importar o dashboard da sua prefêrencia, teremos um dashboards iguala  este:
+
   <div align="center">
   <img src="https://github.com/user-attachments/assets/6660d754-eb2c-4710-8869-96d1963bf830" alt="applications insigths">
   <p><b>Dashboards Grafna</b></p>
 </div>
-
-Para conectar o Az Monitor ao Grafana, é necessário a criação de um Registro de Aplicativo:
-
-  <div align="center">
-  <img src="https://github.com/user-attachments/assets/ad72034a-1638-43bb-9d97-36b6c8ab6483" alt="applications insigths">
-  <p><b>Dashboards Grafna</b></p>
-</div>
-
-Após importar o dashboard da sua prefêrencia, teremos um dashboards iguala  este:
 
   <div align="center">
   <img src="https://github.com/user-attachments/assets/07d4bba4-01d6-43f0-b1a2-6c67cad65fe8" alt="storage monitoring">
