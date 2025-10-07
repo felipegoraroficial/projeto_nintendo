@@ -27,7 +27,7 @@ Para a criação do Job no databricks, foi utilizando Delta Live Tables (DLT) qu
 Para o monitoramento desses jobs na paltaforma do Databricks e todos os recursos da Azure, foi criado painéis no Grafna utilizando Cluster Serveless Warehouse que  conecta a tabelas da System Tables no Databricks e Azure Monitor com Aplications Insights para monitoramento das functions no AZ Functions, Event Hub e StorageAccount.
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/4d5a7b36-5d15-4751-9665-8849e4fffbd6" alt="Desenho Técnico">
+  <img src="https://github.com/user-attachments/assets/ebb8e845-ee21-4f0e-ae13-31c3d480849c" alt="Desenho Técnico">
   <p><b>Desenho Técnico</b></p>
 </div>
 
