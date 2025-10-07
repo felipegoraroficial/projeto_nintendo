@@ -62,13 +62,6 @@ resource "azurerm_storage_data_lake_gen2_path" "inbound" {
   resource           = "directory"
 }
 
-resource "azurerm_storage_data_lake_gen2_path" "bronze" {
-  storage_account_id = azurerm_storage_account.stracc.id
-  filesystem_name    = azurerm_storage_container.containernintnedo.name
-  path               = "bronze"
-  resource           = "directory"
-}
-
 # Criação do Key Vault
 resource "azurerm_key_vault" "kv" {
   name                       = "nintendokeyvaultproject"
@@ -326,7 +319,7 @@ resource "databricks_repo" "my_git_folder" {
 
   path = "/Repos/${databricks_user.felipe_user.user_name}/projeto_nintendo"
 
-  branch = "v3"
+  branch = "v2"
 
   depends_on = [
     azurerm_databricks_workspace.databricks_workspace,
