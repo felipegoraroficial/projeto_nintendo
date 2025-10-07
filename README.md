@@ -68,6 +68,21 @@ Para o monitoramento desses jobs na paltaforma do Databricks e todos os recursos
 7. **Monitoramento de Processos**:
     - **Objetivo**: Monitoramento de todos recurtsos e status do projeto.
     - **Benefício**: Monitoramento de todas as funcionalidades e recursos da arquitetura do projeto em um único local (Grafana).
+  
+## Resultado:
+
+Como resultado deste projeto, será construída uma base inteligente de recomendações de compra para consoles Nintendo Switch, considerando diferentes marketplaces e e-commerces.
+
+Essas recomendações são geradas a partir de uma lógica financeira que avalia o melhor cenário de aquisição: comprar à vista com desconto ou optar pelo pagamento parcelado, investindo o valor original da compra para obter rendimento com base na taxa CDI. A análise considera o número de parcelas, o valor de cada prestação e o potencial de ganho financeiro ao longo do tempo, permitindo identificar a alternativa mais vantajosa para o consumidor.
+
+Abaixo, uma demosntração dos resultados:
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/a3fad42c-d122-4d66-9db8-fd5a85cf0100" alt="base final">
+</div>
+
+<p align="left">
+</p>
 
 ## Construção do Ambiente com Terraform:
 
@@ -404,6 +419,33 @@ https://learn.microsoft.com/en-us/azure/databricks/data-governance/unity-catalog
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/afcc3716-065b-43df-8463-f32f95c391f4" alt="DLT config">
+</div>
+
+<p align="left">
+</p>
+
+- E o seu pipeline DLT ficará assim:
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/12103506-2e90-4f09-8ae4-8e476d8b1f59" alt="DLT pipeline">
+</div>
+
+<p align="left">
+</p>
+
+- Usando expect, com DLT, podemos gerar um relátorio no pipeline identificando a qualidade de dados gerado com DLT:
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/bbcadb96-c0f3-4ad4-8b16-2e29560e4bad" alt="DLT EXPECT">
+</div>
+
+<p align="left">
+</p>
+
+- Por fim, podemos verificar a linhagem de dados na tabela conforme o exemplo abaixo:
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/99336475-1535-403b-b605-b59b7caec5b2" alt="Lineage">
 </div>
 
 <p align="left">
