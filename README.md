@@ -479,7 +479,12 @@ Após importar o dashboard da sua prefêrencia, teremos um dashboards iguala  es
 
   <div align="center">
   <img src="https://github.com/user-attachments/assets/6660d754-eb2c-4710-8869-96d1963bf830" alt="applications insigths">
-  <p><b>Dashboards Grafna</b></p>
+  <p><b>Dashboards Azure Function</b></p>
+</div>
+
+  <div align="center">
+  <img src="https://github.com/user-attachments/assets/293a62f0-0b40-48b7-a075-d89867a82d3a" alt="event hub">
+  <p><b>Dashboards Event Hub</b></p>
 </div>
 
   <div align="center">
