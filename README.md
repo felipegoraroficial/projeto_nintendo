@@ -68,6 +68,21 @@ Para o monitoramento desses jobs na paltaforma do Databricks e todos os recursos
 7. **Monitoramento de Processos**:
     - **Objetivo**: Monitoramento de todos recurtsos e status do projeto.
     - **Benefício**: Monitoramento de todas as funcionalidades e recursos da arquitetura do projeto em um único local (Grafana).
+  
+## Resultado:
+
+Como resultado deste projeto, será construída uma base inteligente de recomendações de compra para consoles Nintendo Switch, considerando diferentes marketplaces e e-commerces.
+
+Essas recomendações são geradas a partir de uma lógica financeira que avalia o melhor cenário de aquisição: comprar à vista com desconto ou optar pelo pagamento parcelado, investindo o valor original da compra para obter rendimento com base na taxa CDI. A análise considera o número de parcelas, o valor de cada prestação e o potencial de ganho financeiro ao longo do tempo, permitindo identificar a alternativa mais vantajosa para o consumidor.
+
+Abaixo, uma demosntração dos resultados:
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/a3fad42c-d122-4d66-9db8-fd5a85cf0100" alt="base final">
+</div>
+
+<p align="left">
+</p>
 
 ## Construção do Ambiente com Terraform:
 
