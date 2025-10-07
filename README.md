@@ -16,13 +16,15 @@ O objetivo deste projeto é a captura de dados em quase tempo real referentes a 
 
 O projeto foi desenvolvido utilizando as linguagens de programação Python para a aplicação no AZ Function e PySpark e SparkSQL na paltaforma de nuvem da Azure Databricks para a modelagem de dados na arquitetura medalhão e criação de tabelas fato e dimenssão bem como metricas e indicadores para posteriores analises de BI.
 
-Usando Azure Functions para realizar requests em quase tempo real e utilizando scrap com auxilio de um agent IA para obter os conteúdos html necessários, armazenamos os dados no diretorio inbound da conta de armazenamento da Azure no formato json.
+Utilizando o Azure Functions como produtor para realizar requisições em quase tempo real, aplicando técnicas de scraping com o apoio de um agente de IA para extrair os conteúdos HTML necessários, que em seguida são enviados ao Azure Event Hub.
+
+Após o recebimento das mensagens no Event Hub, o recurso Azure Stream Analytics foi utilizado como consumidor para processá-las e enviá-las de forma incremental ao diretório inbound da Storage Account.
 
 Com Azure Databricks como plataforma de pipeline de dados na arquitetura medalhão, foi utilizando a linguegam Pyspark para lidar com grandes volume de dados na stage bronze, silver e gold e SparkSQL para criação de analise de dados e BI.
 
-Foi criado um Job dentro da plataforma Databricks que está schedulado sempre que um novo arquivo no diretorio inbound no container da StorageAccount é adicionado.
+Para a criação do Job no databricks, foi utilizando Delta Live Tables (DLT) que facilita a construção do pipeline de dados além de dar suporte a qualidade de dados e linhagem de dados.
 
-Para o monitoramento desses jobs na paltaforma do Databricks e todos os recursos da Azure, foi criado painéis no Grafna utilizando Cluster Serveless Warehouse que  conecta a tabelas da System Tables no Databricks e Azure Monitor com Aplications Insights para monitoramento das functions no AZ Functions e StorageAccount.
+Para o monitoramento desses jobs na paltaforma do Databricks e todos os recursos da Azure, foi criado painéis no Grafna utilizando Cluster Serveless Warehouse que  conecta a tabelas da System Tables no Databricks e Azure Monitor com Aplications Insights para monitoramento das functions no AZ Functions, Event Hub e StorageAccount.
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/4d5a7b36-5d15-4751-9665-8849e4fffbd6" alt="Desenho Técnico">
@@ -37,9 +39,13 @@ Para o monitoramento desses jobs na paltaforma do Databricks e todos os recursos
 
 1. **Captação de Dados Brutos em Quase Tempo Real**:
     - **Objetivo**: Criar uma aplicação no Azure Functions para capturar dados brutos diários de sites de e-commerce e marketplaces para análise posterior.
-    - **Benefício**: Permite a captura de dados em quase tempo real com menor custo.
+    - **Benefício**: Permite produzir dados em quase tempo real com menor custo.
+  
+2. **Ingestão de dados em Streaming**:
+    - **Objetivo**: Criar consumidor streaming de forma incremental no storageaccount.
+    - **Benefício**: Permite a captura de dados em streaming utilizando recurso interátivo na Azure de baixa compelxidade e de menor custo.
 
-2. **Escalando Captura de Elemento HTML**:
+3. **Escalando Captura de Elemento HTML**:
     - **Objetivo**: Utilizar modelos de IA para extrair informações essenciais dos arquivos HTML, como links, títulos, preços, promoções, parcelamentos e imagens dos produtos.
     - **Benefício**: Escalabilidade para ampliar o leque de fonte de dados e flexibilidade para processo produtivo com menor probabilidade para correções de bugs.
 
@@ -51,13 +57,17 @@ Para o monitoramento desses jobs na paltaforma do Databricks e todos os recursos
     - **Objetivo**: Transformar o datalake (storageaccount) em um data lakehouse.
     - **Benefício**: Combinando a flexibilidade e escalabilidade de um data lake com a confiabilidade e performance de um data warehouse.
 
-5. **Otimizando o processo para análise e BI**:
+5. **Pipeline ELT com DLT**:
+    - **Objetivo**: Criar um pipeline de dados com baixa complexidade de desenvolvimento e com grandes ganho em qualidade e monitoramento de dados.
+    - **Benefício**: o DLT transforma pipelines de ETL/ELT em algo mais confiável, menos manual e pronto para escalar, acelerando a entrega de valor com dados.
+
+6. **Otimizando o processo para análise e BI**:
     - **Objetivo**: Utilização do Spark SQL no Databricks para a criação de tabelas fato e dimensão a partir de uma tabela Gold do Data Lakehouse.
     - **Benefício**: Permite uma modelagem de dados analíticos eficiente e confiável, combinando a familiaridade do SQL com a escalabilidade do Spark e a integridade do Delta Lake.
 
-6. **Monitoramento de Processos**:
-    - **Objetivo**: Monitoramento de dos recurtsos e status do projeto com Grafna.
-    - **Benefício**: Monitoramento de todas as funcionalidades e recursos da arquitetura do projeto em um único local.
+7. **Monitoramento de Processos**:
+    - **Objetivo**: Monitoramento de todos recurtsos e status do projeto.
+    - **Benefício**: Monitoramento de todas as funcionalidades e recursos da arquitetura do projeto em um único local (Grafana).
 
 ## Construção do Ambiente com Terraform:
 
@@ -65,7 +75,10 @@ Com esses passos, toda a construção dos recursos cloud e atribuição de funç
 
 - Necessário instalar CLI da Azure e Terraform na maquina e realizar o login com sua conta da Azure.
 - Para verificar se o terraform está instalado em sua maquina, execute o seguinte comando no terminal:
+
 `terraform --version`
+
+
 OBS: A versão da imagem abaixo é necessária para executar comando para criação do recurso Databricks
 
 
@@ -78,81 +91,55 @@ OBS: A versão da imagem abaixo é necessária para executar comando para criaç
 </p>
 
 - Para realizar o login com sua conta, execute o seguinte comando no terminal:
+
 `az login`
+
 Isso irá fazer com que seja aberto uma pagina no browser para realizar a conexão e para verificar se a conexão foi realizada com sucesso execute o seguinte comando:
+
 ` az account show --output json`
 
 - Para que os recursos sejam criados, é necessários registra-los antes com os seguintes comandos:
+
 Databricks: `Register-AzResourceProvider -ProviderNamespace Microsoft.Databricks`
+
 Grafana Manage: `az provider register --namespace Microsoft.Dashboard`
+
 AZ Function: `az provider register --namespace Microsoft.Web`
+
 StorageAccount: `az provider register --namespace Microsoft.Storage`
 
 Após essas execuções, podemos iniciar a criação de recursos com Terraform
 
 - Para iniciar o terraform, execute o seguinte comando no terminal:
+
 `terraform init`
+
 OBS: Será instalado os plugins do arquivo providers.tf
 
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/a2f37258-f07e-4826-9871-35d9036bc1ad" alt="iniciando terraform">
-  <p><b>Iniciando Terraform</b></p>
-</div>
-
-<p align="left">
-</p>
-
 - Para validar se o terraform está com as configurações correta, execute o seguinte comando no terminal:
+
 `terraform validate`
 
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/288c8dcc-07cb-489d-b70f-3ed91b6ca601" alt="validate terraform">
-  <p><b>Validando Configurações Terraform</b></p>
-</div>
-
-<p align="left">
-</p>
-
 - Para iniciar a construção do ambiente, primeiro o Terraform precisa planejar a construção e para isso, execute o seguinte comando no terminal:
+
 `terraform plan`
 
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/0d4931e9-3d47-423e-9a29-03bf8530c3f7" alt="plan terraform">
-  <p><b>Planejamento Terraform</b></p>
-</div>
-
-<p align="left">
-</p>
-
 - Para aplicar ao planejamento realizado anteriormente, execute o seguinte comando no terminal:
-`terraform apply`
-- O Terraform irá perguntar se desejamos seguir com a aplciação, absta inserir "yes".
+
+`terraform apply -auto-approve`
+
+Ao final da execução teremos os seguintes recursos cloud na Azure:
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/ef8360ba-c732-4ec3-b53b-ba0c90f79a25" alt="aprove apply">
-  <p><b>Aprovando Apply</b></p>
+  <img src="https://github.com/user-attachments/assets/5e9774f0-6e12-4eaa-83c8-aef829cd0022" alt="Ddasboard azure portal">
 </div>
 
 <p align="left">
 </p>
 
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/f22819ae-5173-4bbc-8e7a-8b54d0edb1e5" alt="terraform apply">
-  <p><b>Finanlizando Construção</b></p>
-</div>
+- Para excluir todos os recursos do projeto, execute o seguinte comando no terminal:
 
-<p align="left">
-</p>
-
-- Por fim, teremos o seginte recursos criados:
-
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/2e2693bf-bc82-4905-8337-4500ee0baf0e" alt="terraform criado">
-  <p><b>Recursos Cloud Criado</b></p>
-</div>
-
-<p align="left">
-</p>
+`terraform destroy -auto-approvee`
 
 ## Construção do Ambiente Manualmente:
 
@@ -160,15 +147,13 @@ OBS: Será instalado os plugins do arquivo providers.tf
 
 - Com o grupo de recursos criado, o primeiro passo foi a criação de uma conta de armazenamento Gen2 com redundância local e camada hot, pois os dados serão acessados em alta frequência por se tratar de um processo streaming near real time.
 - Na mesma conta de armazenamento, foi criado um único containers.
-- E para este container, foram criados volumes do Databricks com link externos para definição de uma hierarquia de pastas que será utilizada para a construção do pipeline de dados no modelo de arquitetura medalhão, onde temos os seguintes dados:
-    - Inbound: Dados brutos conforme vêm aplucação do azure fucntion no formato json.
-    - Bronze: Estruturação e processamento dos dados json que serão salvos na camada bronze de forma incremental pelo particionamento da data de extração dos dados.
-    - Silver: Etapa em que os dados são padronizados, estruturados pela definição de schemas, limpeza de valores nulos entre outras etapas definidas na camada silver para garantir a maior confiabilidade dos dados brutos.
-    - Gold: Ultima etapa do pipeline de dados, aqui se aplica a construção da regra de negocio que servirá de auxlio para criação de metricas e indicadores dos dados.
+- E para este container, foi criado um diretorio com o nome "inbound", que receberá os dados via Azure Stream Analytics:
+
+OBS: Diferente do V1, onde tinhamos diretorio bronze, silver e gold para armazenamento de external tables e conexão com volumes, nesse projeto, optei pelo Scope do Databricks conectado com secrets e key do storageaccount armazenado em AKV.
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/40f51823-3c1c-4f6a-9afe-c099aff11b19" alt="storageaccount">
-  <p><b>StorageAccount-Estrutura</b></p>
+  <img src="https://github.com/user-attachments/assets/6730324c-5290-4e62-bd06-71921b779e12" alt="storageaccount">
+  <p><b>StorageAccount-Estrutura Inbound</b></p>
 </div>
 
 <p align="left">
@@ -290,9 +275,27 @@ Agora nossa aplicação estará ativa e em execução no Azure fucntion
 <p align="left">
 </p>
 
+### 3.Criação do Event Hub
 
+Ao criar o recruso do Event Hub na Azure, é necessário a criação de um Hub de eventos, crie algo parecido como o da imagem abaixo:
 
-### 3.Criação do Azure Databricks
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/6657e6df-f74b-4a03-ab5a-843d77dc2a40" alt="hub de evento">
+</div>
+
+Agora vá até "Recursos -> Processar dados" para criação de um job no Azure Stream Analytics
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/c5164d56-a35c-45f7-af68-d8abb95a95cd" alt="stream job">
+</div>
+
+Não esqueça de configurar uma chave de politica de acesso para que o AZ Function possa enviar mensagens ao Hub de Eventos:
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/2d72f1b5-65d6-453f-b134-bd4d87f32b7a" alt="politica de acesso">
+</div>
+
+### 4.Criação do Azure Databricks
 
 Com o Azure Databricks criado sem nenhuma particularidade específica, basta acessar o workspace para realizar as configurações locais:
 - Integrar o GitHub ao Databricks com um token de uso pessoal.
@@ -305,10 +308,10 @@ Com o Azure Databricks criado sem nenhuma particularidade específica, basta ace
 <p align="left">
 </p>
 
-- Criação de um cluster: o Standard_DS3_v2 é mais que suficiente.
+- Criação de um cluster: o Standard_D4s_v3 é mais que suficiente.
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/c7cd3457-fa4d-4f57-a816-43775197e5a1" alt="cluster databricks">
+  <img src="https://github.com/user-attachments/assets/9cefd335-a8ed-4de3-ab76-4bd5c428f804" alt="cluster databricks">
   <p><b>Configuração do Cluster</b></p>
 </div>
 
@@ -319,14 +322,14 @@ Com o Azure Databricks criado sem nenhuma particularidade específica, basta ace
   https://github.com/felipegoraroficial/projeto_nintendo.git
 
   <div align="center">
-  <img src="https://github.com/user-attachments/assets/26e57091-2f68-4724-919d-a32c4556ee6b" alt="Workspace">
+  <img src="https://github.com/user-attachments/assets/97a78d49-9ff4-414f-a175-27f54ebf0708" alt="Workspace">
   <p><b>Workspace</b></p>
 </div>
 
 <p align="left">
 </p>
 
-### 4.Liberação de System Tables
+### 5.Liberação de System Tables
 
 - Verifique se o seu usuário está como adimin do workspace do databricks
 Para fazer isso, basta acessar o Microsfot Entry ID e ir em Funções e Administradores para verificar se seu usuário possui a função de Adminsitrador Global
@@ -370,39 +373,25 @@ Acesse o link https://accounts.azuredatabricks.net/ e atribua o seu email pessoa
 
 https://learn.microsoft.com/en-us/azure/databricks/data-governance/unity-catalog/manage-privileges/admin-privileges#assign-metastore-admin
 
-### 5.Criação de um Acess Conector
-
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/be35dabc-4ecf-4b86-bc1b-544c3b719fa1" alt="access-conector">
-</div>
-
-<p align="left">
-</p>
-
-- Crie um Acess Conector com a mesma região e grupo de recurso do projeto.
-- Atribua a função de Colaborador de Dados do Storage Blob ao acess conector.
-- Criação de uma credencial externa no workspace do azure databricks.
-- Criação de dois external location para os container dev e prd (necessário para a criação dos volumes para leituras e gravações de dados).
-
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/7314c14e-a878-41a3-a4de-2d63fb470bc0" alt="config-access-conector">
-</div>
-
-<p align="left">
-</p>
-
-Com o access conector configurado ao storageaccount e as credenciais e external location criadas em nosso workspace, agora podemos criar os volumes conectados aos diretorios inbound, bronze, silver e gold do container nintendo. Seu catalogo deve estar parecido com o da imagem abaixo:
-
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/bac9a97c-deff-4bec-9ba8-f8f0d55e4b04" alt="catalogo databricks">
-</div>
-
-<p align="left">
-</p>
-
-
-
 ### 6.Workflow Databricks
+
+- Crie um Pipeline com DLT
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/64306677-5a3f-4338-9ef0-9541faa76b2d" alt="DLT jobs">
+</div>
+
+<p align="left">
+</p>
+
+- Após a configuração, o databricks irá iniciar a criação do Pipeline:
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/afcc3716-065b-43df-8463-f32f95c391f4" alt="DLT config">
+</div>
+
+<p align="left">
+</p>
 
 - Crie um workflows: inclua tags e descrição se preferir. É muito util incluir tags e descrição para identificação de Jobs quandos e trata de um ambiente com diversos Jobs criado.
 
@@ -434,7 +423,7 @@ Com o access conector configurado ao storageaccount e as credenciais e external 
 - Teremos um pipeline parecido com o da imagem abaixo:
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/36fdb143-0f28-4558-bf41-4de48a0b8571" alt="workflows medalion">
+  <img src="https://github.com/user-attachments/assets/1c68cd3a-fc1a-4a1f-8e2e-fd0be7c58c58" alt="workflows medalion">
   <p><b>Medalion Workflows do Databricks</b></p>
 </div>
 
@@ -444,6 +433,8 @@ Com o access conector configurado ao storageaccount e as credenciais e external 
   <img src="https://github.com/user-attachments/assets/6b3fd527-6199-4251-95aa-74c7ed562f9d" alt="job cluster">
   <p><b>Job Cluster no Databricks</b></p>
 </div>
+
+OBS: Se preferir, poderá ser executado o notebook "pipeline" na pasta src/config que irá criar tanto o pipeline DLT quanto o Job
 
 ### 7.Monitoramento Grafna
 
